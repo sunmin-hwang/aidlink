@@ -1,0 +1,34 @@
+name: Wake Render backend
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 02:55 Asia/Seoul. This only wakes the service; it does not run a batch job.
+    - cron: "55 17 * * *"
+
+permissions: {}
+
+concurrency:
+  group: render-wake
+  cancel-in-progress: false
+
+jobs:
+  wake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Wake backend and check liveness
+        env:
+          BACKEND_URL: ${{ vars.RENDER_BACKEND_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$BACKEND_URL" ]; then
+            echo "Set the RENDER_BACKEND_URL repository variable first."
+            exit 1
+          fi
+          curl --fail --show-error --silent \
+            --connect-timeout 15 --max-time 120 \
+            --retry 3 --retry-delay 15 --retry-all-errors \
+            "${BACKEND_URL%/}/actuator/health/liveness"
+          echo
+          echo "Backend is awake."
