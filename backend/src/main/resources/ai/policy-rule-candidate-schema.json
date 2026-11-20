@@ -1,0 +1,66 @@
+{
+  "type": "object",
+  "properties": {
+    "rule": { "$ref": "#/$defs/node" },
+    "ambiguities": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "required": ["rule", "ambiguities"],
+  "additionalProperties": false,
+  "$defs": {
+    "node": {
+      "anyOf": [
+        { "$ref": "#/$defs/composite" },
+        { "$ref": "#/$defs/condition" }
+      ]
+    },
+    "composite": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["AND", "OR"] },
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/node" }
+        }
+      },
+      "required": ["type", "children"],
+      "additionalProperties": false
+    },
+    "condition": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["CONDITION"] },
+        "field": {
+          "type": "string",
+          "enum": [
+            "AGE", "REGION", "PERSONAL_INCOME", "HOUSEHOLD_INCOME",
+            "MEDIAN_INCOME_RATIO", "EMPLOYMENT", "WEEKLY_WORK_HOURS",
+            "STUDENT_STATUS", "HOUSEHOLD_SIZE", "HOUSEHOLD_TYPE",
+            "HOUSING_TYPE", "HOME_OWNERSHIP", "ASSET", "MARITAL_STATUS",
+            "CHILDREN_COUNT", "BUSINESS_STATUS", "BUSINESS_AGE",
+            "BUSINESS_REVENUE", "MANUAL_REVIEW"
+          ]
+        },
+        "operator": {
+          "type": "string",
+          "enum": [
+            "EQ", "NE", "GT", "GTE", "LT", "LTE", "BETWEEN", "IN",
+            "NOT_IN", "CONTAINS", "REQUIRED"
+          ]
+        },
+        "expectedValues": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "description": { "type": "string" },
+        "sourceText": { "type": "string" }
+      },
+      "required": [
+        "type", "field", "operator", "expectedValues", "description", "sourceText"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
