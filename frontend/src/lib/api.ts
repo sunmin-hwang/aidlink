@@ -1,8 +1,8 @@
 export const clientApiBaseUrl =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 export const serverApiBaseUrl =
-  process.env.BACKEND_API_BASE_URL ?? clientApiBaseUrl;
+  process.env.BACKEND_API_BASE_URL || clientApiBaseUrl || "http://localhost:8080";
 
 export class ApiError extends Error {
   constructor(

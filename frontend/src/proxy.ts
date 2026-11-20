@@ -9,8 +9,8 @@ type Session = {
 const anonymousSession: Session = { authenticated: false, roles: [] };
 
 const backendApiBaseUrl =
-  process.env.BACKEND_API_BASE_URL ??
-  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  process.env.BACKEND_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
   "http://localhost:8080";
 
 async function readSession(request: NextRequest): Promise<Session> {
