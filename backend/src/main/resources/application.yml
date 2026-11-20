@@ -1,0 +1,91 @@
+spring:
+  application:
+    name: aidlink
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+
+server:
+  port: 8080
+  forward-headers-strategy: ${SERVER_FORWARD_HEADERS_STRATEGY:none}
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        secure: ${AIDLINK_SECURE_COOKIE:false}
+        same-site: lax
+
+management:
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5,0.95,0.99
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when_authorized
+  tracing:
+    sampling:
+      probability: ${AIDLINK_TRACE_SAMPLE_RATE:0.1}
+  otlp:
+    tracing:
+      export:
+        enabled: ${AIDLINK_OTLP_TRACING_ENABLED:false}
+      endpoint: ${AIDLINK_OTLP_TRACING_ENDPOINT:http://localhost:4318/v1/traces}
+  opentelemetry:
+    resource-attributes:
+      service.namespace: aidlink
+      deployment.environment: ${AIDLINK_ENVIRONMENT:local}
+
+logging:
+  structured:
+    format:
+      console: ${AIDLINK_LOG_FORMAT:ecs}
+    ecs:
+      service:
+        name: aidlink-backend
+        environment: ${AIDLINK_ENVIRONMENT:local}
+
+aidlink:
+  cors:
+    allowed-origins: ${AIDLINK_CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  security:
+    bootstrap-admin:
+      enabled: ${AIDLINK_BOOTSTRAP_ADMIN_ENABLED:false}
+      email: ${AIDLINK_BOOTSTRAP_ADMIN_EMAIL:}
+      password: ${AIDLINK_BOOTSTRAP_ADMIN_PASSWORD:}
+  redis:
+    enabled: ${AIDLINK_REDIS_ENABLED:false}
+  rate-limit:
+    analysis-per-minute: ${AIDLINK_ANALYSIS_RATE_LIMIT:60}
+  ai:
+    cost:
+      input-usd-per-million: ${AIDLINK_AI_INPUT_USD_PER_MILLION:0}
+      output-usd-per-million: ${AIDLINK_AI_OUTPUT_USD_PER_MILLION:0}
+    pipeline:
+      scheduling-enabled: ${AIDLINK_AI_PIPELINE_SCHEDULING_ENABLED:false}
+      cron: ${AIDLINK_AI_PIPELINE_CRON:0 30 3 * * *}
+      max-per-run: ${AIDLINK_AI_PIPELINE_MAX_PER_RUN:50}
+    openai:
+      enabled: ${AIDLINK_OPENAI_ENABLED:false}
+      base-url: ${AIDLINK_OPENAI_BASE_URL:https://api.openai.com/v1}
+      api-key: ${AIDLINK_OPENAI_API_KEY:}
+      model: ${AIDLINK_OPENAI_MODEL:gpt-5.6-terra}
+  collector:
+    gov24:
+      base-url: ${AIDLINK_GOV24_BASE_URL:https://api.odcloud.kr/api/gov24/v3}
+      service-key: ${AIDLINK_GOV24_SERVICE_KEY:}
+      scheduling-enabled: ${AIDLINK_GOV24_SCHEDULING_ENABLED:false}
+      cron: ${AIDLINK_GOV24_CRON:0 0 3 * * *}
+      source-removed-threshold: ${AIDLINK_GOV24_SOURCE_REMOVED_THRESHOLD:3}
+

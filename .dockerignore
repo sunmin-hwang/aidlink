@@ -1,0 +1,8 @@
+.git
+.gradle
+backend/build
+frontend/.next
+frontend/node_modules
+tmp
+.env
+*.log

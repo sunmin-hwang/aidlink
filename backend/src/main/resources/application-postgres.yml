@@ -1,0 +1,29 @@
+spring:
+  autoconfigure:
+    exclude: []
+  datasource:
+    url: ${AIDLINK_DB_URL:jdbc:postgresql://localhost:5432/aidlink}
+    username: ${AIDLINK_DB_USERNAME:aidlink}
+    password: ${AIDLINK_DB_PASSWORD:aidlink_dev}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Asia/Seoul
+  flyway:
+    enabled: true
+  batch:
+    job:
+      enabled: false
+    jdbc:
+      initialize-schema: always
+  data:
+    redis:
+      host: ${AIDLINK_REDIS_HOST:localhost}
+      port: ${AIDLINK_REDIS_PORT:6379}
+      connect-timeout: 2s
+      timeout: 2s
+
