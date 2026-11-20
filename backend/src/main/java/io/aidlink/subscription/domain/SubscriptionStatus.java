@@ -1,0 +1,7 @@
+package io.aidlink.subscription.domain;
+
+public enum SubscriptionStatus {
+    ACTIVE,
+    PAUSED,
+    CANCELLED
+}

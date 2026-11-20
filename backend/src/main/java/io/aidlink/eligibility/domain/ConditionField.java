@@ -1,0 +1,24 @@
+package io.aidlink.eligibility.domain;
+
+public enum ConditionField {
+    AGE,
+    REGION,
+    PERSONAL_INCOME,
+    HOUSEHOLD_INCOME,
+    MEDIAN_INCOME_RATIO,
+    EMPLOYMENT,
+    WEEKLY_WORK_HOURS,
+    STUDENT_STATUS,
+    HOUSEHOLD_SIZE,
+    HOUSEHOLD_TYPE,
+    HOUSING_TYPE,
+    HOME_OWNERSHIP,
+    ASSET,
+    MARITAL_STATUS,
+    CHILDREN_COUNT,
+    BUSINESS_STATUS,
+    BUSINESS_AGE,
+    BUSINESS_REVENUE,
+    MANUAL_REVIEW
+}
+
