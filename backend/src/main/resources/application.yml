@@ -60,6 +60,7 @@ aidlink:
   cors:
     allowed-origins: ${AIDLINK_CORS_ALLOWED_ORIGINS:http://localhost:3000}
   security:
+    registration-enabled: ${AIDLINK_REGISTRATION_ENABLED:true}
     bootstrap-admin:
       enabled: ${AIDLINK_BOOTSTRAP_ADMIN_ENABLED:false}
       email: ${AIDLINK_BOOTSTRAP_ADMIN_EMAIL:}

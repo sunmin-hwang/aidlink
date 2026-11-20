@@ -5,6 +5,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -29,19 +31,26 @@ public class AuthController {
 
     private final UserAccountOperations accounts;
     private final AuthenticationManager authenticationManager;
+    private final boolean registrationEnabled;
     private final SecurityContextRepository securityContextRepository =
             new HttpSessionSecurityContextRepository();
 
     public AuthController(
             UserAccountOperations accounts,
-            AuthenticationManager authenticationManager
+            AuthenticationManager authenticationManager,
+            @Value("${aidlink.security.registration-enabled:true}") boolean registrationEnabled
     ) {
         this.accounts = accounts;
         this.authenticationManager = authenticationManager;
+        this.registrationEnabled = registrationEnabled;
     }
 
     @PostMapping("/register")
-    public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+        if (!registrationEnabled) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "현재 회원가입이 잠시 중단되어 있습니다."));
+        }
         accounts.register(request.email(), request.password());
         return ResponseEntity.noContent().build();
     }
