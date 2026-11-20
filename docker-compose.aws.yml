@@ -1,0 +1,178 @@
+name: aidlink-aws
+
+x-json-logging: &json-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-loki-logging: &loki-logging
+  driver: loki
+  options:
+    loki-url: http://localhost:3100/loki/api/v1/push
+    loki-retries: "3"
+    loki-timeout: "5s"
+    mode: non-blocking
+    max-buffer-size: "4m"
+    max-size: "10m"
+    max-file: "3"
+    loki-external-labels: "environment=aws-ec2,container={{.Name}}"
+
+services:
+  loki:
+    image: grafana/loki:3.7.8
+    command: ["-config.file=/etc/loki/loki.yml"]
+    logging: *json-logging
+    ports:
+      - "127.0.0.1:3100:3100"
+    volumes:
+      - ./infra/loki/loki.yml:/etc/loki/loki.yml:ro
+      - aidlink-loki-data:/loki
+    mem_limit: 320m
+    restart: unless-stopped
+
+  tempo:
+    image: grafana/tempo:2.10.8
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    logging: *json-logging
+    volumes:
+      - ./infra/tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+      - aidlink-tempo-data:/var/tempo
+    mem_limit: 192m
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    image: aidlink/backend:aws
+    logging: *loki-logging
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx320m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
+      SERVER_TOMCAT_THREADS_MAX: "40"
+      SERVER_TOMCAT_THREADS_MIN_SPARE: "4"
+      SPRING_PROFILES_ACTIVE: postgres
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "5"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "0"
+      AIDLINK_DB_URL: ${AIDLINK_DB_URL:?Set AIDLINK_DB_URL in .env.aws}
+      AIDLINK_DB_USERNAME: ${AIDLINK_DB_USERNAME:?Set AIDLINK_DB_USERNAME in .env.aws}
+      AIDLINK_DB_PASSWORD: ${AIDLINK_DB_PASSWORD:?Set AIDLINK_DB_PASSWORD in .env.aws}
+      AIDLINK_REDIS_ENABLED: "false"
+      AIDLINK_OTLP_TRACING_ENABLED: "true"
+      AIDLINK_OTLP_TRACING_ENDPOINT: http://tempo:4318/v1/traces
+      AIDLINK_TRACE_SAMPLE_RATE: ${AIDLINK_TRACE_SAMPLE_RATE:-0.05}
+      AIDLINK_ENVIRONMENT: aws-ec2
+      AIDLINK_SECURE_COOKIE: "true"
+      AIDLINK_CORS_ALLOWED_ORIGINS: https://${AIDLINK_DOMAIN:?Set AIDLINK_DOMAIN in .env.aws}
+      AIDLINK_BOOTSTRAP_ADMIN_ENABLED: ${AIDLINK_BOOTSTRAP_ADMIN_ENABLED:-false}
+      AIDLINK_BOOTSTRAP_ADMIN_EMAIL: ${AIDLINK_BOOTSTRAP_ADMIN_EMAIL:-}
+      AIDLINK_BOOTSTRAP_ADMIN_PASSWORD: ${AIDLINK_BOOTSTRAP_ADMIN_PASSWORD:-}
+      AIDLINK_GOV24_SERVICE_KEY: ${AIDLINK_GOV24_SERVICE_KEY:-}
+      AIDLINK_GOV24_SCHEDULING_ENABLED: ${AIDLINK_GOV24_SCHEDULING_ENABLED:-false}
+      AIDLINK_GOV24_CRON: ${AIDLINK_GOV24_CRON:-0 0 3 * * *}
+      AIDLINK_OPENAI_ENABLED: ${AIDLINK_OPENAI_ENABLED:-false}
+      AIDLINK_OPENAI_API_KEY: ${AIDLINK_OPENAI_API_KEY:-}
+      AIDLINK_OPENAI_MODEL: ${AIDLINK_OPENAI_MODEL:-gpt-5.6-terra}
+      AIDLINK_AI_INPUT_USD_PER_MILLION: ${AIDLINK_AI_INPUT_USD_PER_MILLION:-0}
+      AIDLINK_AI_OUTPUT_USD_PER_MILLION: ${AIDLINK_AI_OUTPUT_USD_PER_MILLION:-0}
+      AIDLINK_AI_PIPELINE_SCHEDULING_ENABLED: ${AIDLINK_AI_PIPELINE_SCHEDULING_ENABLED:-false}
+    expose:
+      - "8080"
+    depends_on:
+      - loki
+      - tempo
+    mem_limit: 512m
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_BASE_URL: https://${AIDLINK_DOMAIN:?Set AIDLINK_DOMAIN in .env.aws}
+    image: aidlink/frontend:aws
+    logging: *loki-logging
+    environment:
+      BACKEND_API_BASE_URL: http://backend:8080
+      NEXT_PUBLIC_API_BASE_URL: https://${AIDLINK_DOMAIN:?Set AIDLINK_DOMAIN in .env.aws}
+      NODE_OPTIONS: --max-old-space-size=192
+    expose:
+      - "3000"
+    depends_on:
+      - backend
+      - loki
+    mem_limit: 256m
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.5.5
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+      - --storage.tsdb.retention.size=1GB
+      - --web.enable-lifecycle
+    logging: *json-logging
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - aidlink-prometheus-data:/prometheus
+    depends_on:
+      - backend
+    mem_limit: 256m
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:13.2.3
+    logging: *json-logging
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env.aws}
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/system.json
+      GF_SECURITY_COOKIE_SECURE: "true"
+      GF_SECURITY_COOKIE_SAMESITE: lax
+      GF_SERVER_DOMAIN: ${AIDLINK_DOMAIN:?Set AIDLINK_DOMAIN in .env.aws}
+      GF_SERVER_ROOT_URL: https://${AIDLINK_DOMAIN:?Set AIDLINK_DOMAIN in .env.aws}/grafana/
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_SECURITY_DISABLE_GRAVATAR: "true"
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - aidlink-grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    mem_limit: 256m
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2.10.2-alpine
+    logging: *loki-logging
+    environment:
+      AIDLINK_DOMAIN: ${AIDLINK_DOMAIN:?Set AIDLINK_DOMAIN in .env.aws}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - aidlink-caddy-data:/data
+      - aidlink-caddy-config:/config
+    depends_on:
+      - frontend
+      - backend
+      - grafana
+      - loki
+    mem_limit: 64m
+    restart: unless-stopped
+
+volumes:
+  aidlink-prometheus-data:
+  aidlink-loki-data:
+  aidlink-tempo-data:
+  aidlink-grafana-data:
+  aidlink-caddy-data:
+  aidlink-caddy-config:

@@ -1,0 +1,10 @@
+aws_profile      = "default"
+ssh_allowed_cidr = "203.0.113.10/32"
+ssh_public_key   = "ssh-ed25519 AAAA... your-key"
+
+db_username = "aidlink_admin"
+db_password = "replace-with-a-long-random-password"
+
+# Defaults are sized like the previous Hyojason deployment.
+# instance_type    = "t4g.small"
+# db_instance_class = "db.t4g.micro"

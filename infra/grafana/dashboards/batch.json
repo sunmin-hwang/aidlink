@@ -1,0 +1,67 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "type": "stat", "title": "최근 24시간 성공", "id": 1,
+      "gridPos": {"h": 5, "w": 6, "x": 0, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "increase(batch_execution_total{outcome=\"success\"}[24h])", "refId": "A"}],
+      "fieldConfig": {"defaults": {"decimals": 0}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}}
+    },
+    {
+      "type": "stat", "title": "최근 24시간 실패", "id": 2,
+      "gridPos": {"h": 5, "w": 6, "x": 6, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "increase(batch_execution_total{outcome=\"failure\"}[24h])", "refId": "A"}],
+      "fieldConfig": {"defaults": {"decimals": 0}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}}
+    },
+    {
+      "type": "stat", "title": "최근 실행 소요시간", "id": 3,
+      "gridPos": {"h": 5, "w": 6, "x": 12, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "batch_duration_seconds_max", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}}
+    },
+    {
+      "type": "stat", "title": "Review Queue", "id": 4,
+      "gridPos": {"h": 5, "w": 6, "x": 18, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "admin_review_queue_size", "refId": "A"}],
+      "fieldConfig": {"defaults": {"decimals": 0}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}}
+    },
+    {
+      "type": "timeseries", "title": "Batch 실행 결과", "id": 5,
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 5},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (outcome) (increase(batch_execution_total[1h]))", "legendFormat": "{{outcome}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"decimals": 0}, "overrides": []}, "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "type": "timeseries", "title": "처리 항목", "id": 6,
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 5},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "increase(batch_items_read_total[1h])", "legendFormat": "read", "refId": "A"},
+        {"expr": "increase(batch_items_written_total[1h])", "legendFormat": "written", "refId": "B"},
+        {"expr": "increase(batch_items_skipped_total[1h])", "legendFormat": "skipped", "refId": "C"}
+      ],
+      "fieldConfig": {"defaults": {"decimals": 0}, "overrides": []}, "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "type": "timeseries", "title": "정책 수집 결과", "id": 7,
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 13},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "increase(policy_collected_total[1h])", "legendFormat": "collected", "refId": "A"},
+        {"expr": "increase(policy_created_total[1h])", "legendFormat": "created", "refId": "B"},
+        {"expr": "increase(policy_updated_total[1h])", "legendFormat": "updated", "refId": "C"}
+      ],
+      "fieldConfig": {"defaults": {"decimals": 0}, "overrides": []}, "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    }
+  ],
+  "refresh": "30s", "schemaVersion": 41, "tags": ["aidlink", "batch"],
+  "templating": {"list": []}, "time": {"from": "now-24h", "to": "now"},
+  "title": "AIDLINK · Batch", "uid": "aidlink-batch", "version": 1
+}

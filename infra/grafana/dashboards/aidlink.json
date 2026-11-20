@@ -1,0 +1,94 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "type": "stat", "title": "전체 정책", "id": 1,
+      "gridPos": {"h": 5, "w": 4, "x": 0, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "policy_total", "refId": "A"}],
+      "fieldConfig": {"defaults": {"decimals": 0}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}}
+    },
+    {
+      "type": "stat", "title": "24시간 신규", "id": 2,
+      "gridPos": {"h": 5, "w": 4, "x": 4, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "increase(policy_created_total[24h])", "refId": "A"}],
+      "fieldConfig": {"defaults": {"decimals": 0}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}}
+    },
+    {
+      "type": "stat", "title": "24시간 변경", "id": 3,
+      "gridPos": {"h": 5, "w": 4, "x": 8, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "increase(policy_updated_total[24h])", "refId": "A"}],
+      "fieldConfig": {"defaults": {"decimals": 0}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}}
+    },
+    {
+      "type": "stat", "title": "Review Queue", "id": 4,
+      "gridPos": {"h": 5, "w": 4, "x": 12, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "admin_review_queue_size", "refId": "A"}],
+      "fieldConfig": {"defaults": {"decimals": 0}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}}
+    },
+    {
+      "type": "stat", "title": "24시간 분석", "id": 5,
+      "gridPos": {"h": 5, "w": 4, "x": 16, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(increase(eligibility_evaluation_total[24h]))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"decimals": 0}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}}
+    },
+    {
+      "type": "stat", "title": "24시간 Simulation", "id": 6,
+      "gridPos": {"h": 5, "w": 4, "x": 20, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "increase(simulation_total[24h])", "refId": "A"}],
+      "fieldConfig": {"defaults": {"decimals": 0}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}}
+    },
+    {
+      "type": "timeseries", "title": "자격 분석 결과", "id": 7,
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 5},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (status) (rate(eligibility_evaluation_total[5m]))", "legendFormat": "{{status}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []}, "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "type": "timeseries", "title": "AI 요청 결과", "id": 8,
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 5},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (outcome) (rate(ai_request_total[5m]))", "legendFormat": "{{outcome}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []}, "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "type": "timeseries", "title": "AI Token 사용량", "id": 9,
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 5},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (type) (increase(ai_token_usage_total[1h]))", "legendFormat": "{{type}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"decimals": 0}, "overrides": []}, "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "type": "timeseries", "title": "Rule Validation", "id": 10,
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 13},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (status) (increase(policy_validation_total[1h]))", "legendFormat": "{{status}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"decimals": 0}, "overrides": []}, "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "type": "timeseries", "title": "UNKNOWN 비율", "id": 11,
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 13},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(rate(eligibility_unknown_total[15m])) / clamp_min(sum(rate(eligibility_evaluation_total[15m])), 1e-9)", "legendFormat": "unknown ratio", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1}, "overrides": []}, "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "type": "stat", "title": "추정 AI 비용 (USD)", "id": 12,
+      "gridPos": {"h": 5, "w": 6, "x": 0, "y": 21},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "ai_estimated_cost_total{currency=\"USD\"}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "currencyUSD", "decimals": 4}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}}
+    }
+  ],
+  "refresh": "15s", "schemaVersion": 41, "tags": ["aidlink", "business"],
+  "templating": {"list": []}, "time": {"from": "now-24h", "to": "now"},
+  "title": "AIDLINK · Business", "uid": "aidlink-business", "version": 1
+}

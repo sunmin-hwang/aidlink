@@ -1,0 +1,19 @@
+{
+	auto_https off
+	admin off
+}
+
+:8080 {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy backend:8080 {
+			header_up Host {http.request.host}
+			header_up X-Forwarded-Proto https
+		}
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
+}

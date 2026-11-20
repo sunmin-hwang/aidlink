@@ -1,0 +1,55 @@
+services:
+  backend:
+    environment:
+      # The browser reaches Spring through Cloudflare and Caddy over HTTPS.
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
+      AIDLINK_ENVIRONMENT: local-share
+      AIDLINK_SECURE_COOKIE: "true"
+
+  frontend:
+    build:
+      args:
+        # An empty public base URL makes browser requests same-origin (/api/*).
+        NEXT_PUBLIC_API_BASE_URL: ""
+    environment:
+      BACKEND_API_BASE_URL: http://backend:8080
+      NEXT_PUBLIC_API_BASE_URL: ""
+
+  share-proxy:
+    image: caddy:2.10.2-alpine
+    container_name: aidlink-share-proxy
+    ports:
+      - "127.0.0.1:${SHARE_PROXY_HOST_PORT:-8088}:8080"
+    volumes:
+      - ./infra/share/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: aidlink-cloudflared
+    command:
+      - tunnel
+      - --no-autoupdate
+      - --url
+      - http://share-proxy:8080
+    depends_on:
+      - share-proxy
+    restart: unless-stopped
+
+  cloudflared-monitoring:
+    image: cloudflare/cloudflared:latest
+    container_name: aidlink-cloudflared-monitoring
+    profiles:
+      - monitoring-share
+    command:
+      - tunnel
+      - --no-autoupdate
+      - --url
+      - http://grafana:3000
+    depends_on:
+      - grafana
+    restart: unless-stopped
+
