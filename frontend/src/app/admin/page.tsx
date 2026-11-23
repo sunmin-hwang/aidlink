@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { apiFetch, ApiError } from "../../lib/api";
 import { paginationItems } from "../../lib/pagination";
+import AdminPolicyLinks from "../../components/AdminPolicyLinks";
 
 type Review = {
   id: number;
@@ -310,6 +311,7 @@ export default function AdminPage() {
         </div>
       </section>
 
+      <AdminPolicyLinks />
       <section className="admin-section lifecycle-admin-section" aria-labelledby="lifecycle-title">
         <div className="admin-section-heading">
           <div><span>02 — LIFECYCLE</span><h2 id="lifecycle-title">보관 정책과 삭제 영향</h2></div>

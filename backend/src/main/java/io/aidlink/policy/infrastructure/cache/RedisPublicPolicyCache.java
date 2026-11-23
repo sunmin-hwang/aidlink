@@ -16,9 +16,9 @@ import java.util.Optional;
 @ConditionalOnProperty(prefix = "aidlink.redis", name = "enabled", havingValue = "true")
 public class RedisPublicPolicyCache implements PublicPolicyCache {
 
-    private static final String ALL_KEY = "aidlink:policy:all:v6";
-    private static final String ONE_KEY_PREFIX = "aidlink:policy:one:v6:";
-    private static final String ONE_KEYS_INDEX = "aidlink:policy:one:v6:keys";
+    private static final String ALL_KEY = "aidlink:policy:all:v7";
+    private static final String ONE_KEY_PREFIX = "aidlink:policy:one:v7:";
+    private static final String ONE_KEYS_INDEX = "aidlink:policy:one:v7:keys";
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;

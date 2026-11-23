@@ -77,6 +77,9 @@ public class PolicyEntity {
     @Column(name = "source_link_verified_at")
     private Instant sourceLinkVerifiedAt;
 
+    @Column(name = "source_link_published_usable", nullable = false)
+    private boolean sourceLinkPublishedUsable = true;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "analysis_status", nullable = false, length = 40)
     private PolicyAnalysisStatus analysisStatus;
@@ -301,11 +304,14 @@ public class PolicyEntity {
     }
 
     public String getApplicationUrl() {
-        return verifiedSourceUrl != null && applicationUrl.equals(sourceUrl)
-                ? verifiedSourceUrl : applicationUrl;
+        return applicationUrl.equals(sourceUrl)
+                ? getSourceUrl() : applicationUrl;
     }
 
     public String getSourceUrl() {
+        if (!sourceLinkPublishedUsable) {
+            return "";
+        }
         return verifiedSourceUrl != null ? verifiedSourceUrl : sourceUrl;
     }
 
