@@ -3,7 +3,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { serverApiBaseUrl } from "../../lib/api";
 import {
-  applicationPeriod,
   EMPLOYMENT_STATUS_OPTIONS,
   HOUSEHOLD_TYPE_OPTIONS,
   REGION_OPTIONS,
@@ -12,6 +11,7 @@ import {
 } from "../../lib/policy-display";
 import type { PolicySearchPage, PolicySearchSort } from "../../lib/types";
 import { paginationItems } from "../../lib/pagination";
+import { ApplicationPeriodDisplay } from "../../components/ApplicationPeriodDisplay";
 
 export const dynamic = "force-dynamic";
 
@@ -151,7 +151,8 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Sea
             {SORT_OPTIONS.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
           </select>
         </label>
-        <label className="checkbox-label"><input name="openOnly" type="checkbox" value="true" defaultChecked={first(params.openOnly) === "true"} />현재 신청 가능한 기간만</label>
+        <label className="checkbox-label"><input name="openOnly" type="checkbox" value="true" defaultChecked={first(params.openOnly) === "true"} />현재 이용·신청 가능한 정책만</label>
+        <small className="availability-filter-note">별도 신청이 없거나 수집된 월별 일정에 해당하는 정책도 포함합니다. 정확한 사항은 공식 원문을 확인해 주세요.</small>
         <button className="primary compact" type="submit">검색</button>
       </form>
 
@@ -194,7 +195,7 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Sea
                 </div>
                 <div>
                   <span>신청 기간</span>
-                  <p>{applicationPeriod(policy)}</p>
+                  <ApplicationPeriodDisplay policy={policy} />
                 </div>
               </div>
               <div className="catalog-footer">

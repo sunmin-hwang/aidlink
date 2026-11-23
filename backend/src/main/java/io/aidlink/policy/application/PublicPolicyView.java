@@ -26,7 +26,9 @@ public record PublicPolicyView(
         String sourceUrl,
         Instant sourceUpdatedAt,
         PolicyAnalysisStatus analysisStatus,
-        JsonNode rule
+        JsonNode rule,
+        io.aidlink.policy.period.PublicApplicationPeriod applicationPeriod,
+        io.aidlink.policy.domain.PolicyLifecycleStatus lifecycleStatus
 ) {
     public static PublicPolicyView from(Policy policy, RuleJsonMapper mapper) {
         return new PublicPolicyView(
@@ -47,7 +49,9 @@ public record PublicPolicyView(
                 PublicPolicyLink.usableUrl(policy.sourceUrl()),
                 policy.sourceUpdatedAt(),
                 policy.analysisStatus(),
-                policy.rule() == null ? null : mapper.toJson(policy.rule())
+                policy.rule() == null ? null : mapper.toJson(policy.rule()),
+                policy.applicationPeriod(),
+                policy.lifecycleStatus()
         );
     }
 }

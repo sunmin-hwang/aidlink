@@ -26,6 +26,8 @@ jobs:
           --health-retries 20
     env:
       AIDLINK_RUN_POSTGRES_TEST: "true"
+      AIDLINK_LINK_DB_TEST: "true"
+      AIDLINK_PERIOD_DB_TEST: "true"
       AIDLINK_DB_URL: jdbc:postgresql://localhost:5432/aidlink
       AIDLINK_DB_USERNAME: aidlink
       AIDLINK_DB_PASSWORD: aidlink_ci
@@ -54,6 +56,9 @@ jobs:
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
+      - name: Test frontend
+        working-directory: frontend
+        run: npm test
       - name: Lint frontend
         working-directory: frontend
         run: npm run lint

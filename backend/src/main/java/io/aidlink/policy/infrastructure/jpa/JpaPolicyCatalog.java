@@ -53,7 +53,7 @@ public class JpaPolicyCatalog implements PolicyCatalog {
 
     @Override
     public Optional<Policy> findById(long policyId) {
-        return repository.findOneWithRule(policyId, PolicyLifecycleStatus.ACTIVE)
+        return repository.findOnePublicWithRule(policyId)
                 .map(this::toDomain);
     }
 
@@ -197,7 +197,8 @@ public class JpaPolicyCatalog implements PolicyCatalog {
                 entity.getLastSeenAt(),
                 entity.getMissedCollectionCount(),
                 entity.getAnalysisStatus(),
-                rule
+                rule,
+                entity.getSchedule().publicView()
         );
     }
 }

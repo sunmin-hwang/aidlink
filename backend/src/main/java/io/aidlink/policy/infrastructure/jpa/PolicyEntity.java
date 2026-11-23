@@ -4,6 +4,9 @@ import io.aidlink.policy.domain.PolicyAnalysisStatus;
 import io.aidlink.policy.domain.PolicyLifecycleStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Embedded;
+import io.aidlink.policy.period.PolicySchedule;
+import io.aidlink.policy.period.ApplicationWindow;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
@@ -22,6 +25,9 @@ import java.time.ZoneId;
 @Entity
 @Table(name = "policy")
 public class PolicyEntity {
+
+    @Embedded
+    private PolicySchedule schedule = new PolicySchedule();
 
     private static final ZoneId SERVICE_ZONE = ZoneId.of("Asia/Seoul");
 
@@ -76,6 +82,9 @@ public class PolicyEntity {
 
     @Column(name = "source_link_verified_at")
     private Instant sourceLinkVerifiedAt;
+
+    @Column(name = "source_link_published_usable", nullable = false)
+    private boolean sourceLinkPublishedUsable = true;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "analysis_status", nullable = false, length = 40)
@@ -173,14 +182,16 @@ public class PolicyEntity {
         this.description = description;
         this.targetDescription = targetDescription;
         this.supportContent = supportContent;
-        this.applicationStart = applicationStart;
-        this.applicationEnd = applicationEnd;
+        ApplicationWindow window = schedule.source(applicationMethod, applicationStart, applicationEnd);
+        this.applicationStart = window.start();
+        this.applicationEnd = window.end();
         this.applicationMethod = applicationMethod;
         this.requiredDocuments = requiredDocuments;
         this.applicationUrl = applicationUrl;
         this.sourceUrl = sourceUrl;
         this.analysisStatus = analysisStatus;
         this.sourceUpdatedAt = sourceUpdatedAt;
+        refreshPeriodLifecycle();
     }
 
     public boolean markSeen(Instant seenAt) {
@@ -220,11 +231,25 @@ public class PolicyEntity {
     }
 
     private PolicyLifecycleStatus statusFromApplicationEnd() {
-        return applicationEnd != null
-                && applicationEnd.isBefore(LocalDate.now(SERVICE_ZONE))
+        return schedule.window(applicationStart, applicationEnd).expired(java.time.LocalDateTime.now(SERVICE_ZONE))
                 ? PolicyLifecycleStatus.EXPIRED
                 : PolicyLifecycleStatus.ACTIVE;
     }
+
+    public void verifyPeriod(String text, String url, String evidence, String reviewer) {
+        ApplicationWindow window = schedule.verify(text, url, evidence, reviewer, Instant.now());
+        applicationStart = window.start(); applicationEnd = window.end();
+        refreshPeriodLifecycle();
+    }
+
+    private void refreshPeriodLifecycle() {
+        if (lifecycleStatus == PolicyLifecycleStatus.ACTIVE || lifecycleStatus == PolicyLifecycleStatus.EXPIRED) {
+            lifecycleStatus = statusFromApplicationEnd();
+        }
+    }
+
+    public PolicySchedule getSchedule() { return schedule; }
+    public String getVerifiedSourceUrl() { return verifiedSourceUrl; }
 
     public Long getId() {
         return id;
@@ -301,11 +326,14 @@ public class PolicyEntity {
     }
 
     public String getApplicationUrl() {
-        return verifiedSourceUrl != null && applicationUrl.equals(sourceUrl)
-                ? verifiedSourceUrl : applicationUrl;
+        return applicationUrl.equals(sourceUrl)
+                ? getSourceUrl() : applicationUrl;
     }
 
     public String getSourceUrl() {
+        if (!sourceLinkPublishedUsable) {
+            return "";
+        }
         return verifiedSourceUrl != null ? verifiedSourceUrl : sourceUrl;
     }
 

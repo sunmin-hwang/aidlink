@@ -3,13 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { serverApiBaseUrl } from "../../../lib/api";
 import {
-  applicationPeriod,
+  applicationMethodDescription,
   regionLabel,
   splitPolicyText,
   summarizePolicyText,
 } from "../../../lib/policy-display";
 import type { Policy, RuleNode } from "../../../lib/types";
 import { BookmarkButton } from "../../../components/BookmarkButton";
+import { ApplicationPeriodDisplay } from "../../../components/ApplicationPeriodDisplay";
 
 export const dynamic = "force-dynamic";
 
@@ -146,7 +147,7 @@ export default async function PolicyDetailPage({ params }: { params: Params }) {
         </article>
         <article>
           <span className="overview-label">신청 기간</span>
-          <strong>{applicationPeriod(policy)}</strong>
+          <ApplicationPeriodDisplay policy={policy} />
         </article>
       </section>
 
@@ -174,8 +175,10 @@ export default async function PolicyDetailPage({ params }: { params: Params }) {
               <div><p>APPLICATION</p><h2>어떻게 신청하나요?</h2></div>
             </div>
             <dl className="detail-list application-detail-list">
-              <div><dt>신청 기간</dt><dd>{applicationPeriod(policy)}</dd></div>
-              <div><dt>신청방법</dt><ApplicationDetailValue value={policy.applicationMethod} /></div>
+              <div><dt>신청 기간</dt><dd><ApplicationPeriodDisplay policy={policy} /></dd></div>
+              {policy.applicationPeriod?.origin === "PROVIDER_REVIEW" && <div><dt>기간 확인 근거</dt><dd>제공기관 공식 공고 확인 · {policy.applicationPeriod.verifiedAt && new Date(policy.applicationPeriod.verifiedAt).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}</dd></div>}
+              {policy.applicationPeriod?.sourceText && <div><dt>수집된 신청기한 안내</dt><dd>{policy.applicationPeriod.sourceText}</dd></div>}
+              <div><dt>신청방법</dt><ApplicationDetailValue value={applicationMethodDescription(policy.applicationMethod)} /></div>
               <div><dt>필요서류</dt><ApplicationDetailValue value={policy.requiredDocuments} /></div>
               <div><dt>제공기관</dt><dd>{policy.provider}</dd></div>
               <div><dt>공식 원문 갱신</dt><dd>{policy.sourceUpdatedAt ? new Date(policy.sourceUpdatedAt).toLocaleDateString("ko-KR") : "정보 없음"}</dd></div>

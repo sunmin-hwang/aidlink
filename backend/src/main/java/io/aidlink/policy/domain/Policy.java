@@ -26,8 +26,26 @@ public record Policy(
         Instant lastSeenAt,
         int missedCollectionCount,
         PolicyAnalysisStatus analysisStatus,
-        RuleNode rule
+        RuleNode rule,
+        io.aidlink.policy.period.PublicApplicationPeriod applicationPeriod
 ) {
+
+    public Policy(long id, String externalId, String name, String provider, String category, String regionCode,
+                  String description, String targetDescription, String supportContent, LocalDate applicationStart,
+                  LocalDate applicationEnd, String applicationMethod, String requiredDocuments, String applicationUrl,
+                  String sourceUrl, Instant sourceUpdatedAt, PolicyLifecycleStatus lifecycleStatus, Instant lastSeenAt,
+                  int missedCollectionCount, PolicyAnalysisStatus analysisStatus, RuleNode rule) {
+        this(id, externalId, name, provider, category, regionCode, description, targetDescription, supportContent,
+                applicationStart, applicationEnd, applicationMethod, requiredDocuments, applicationUrl, sourceUrl,
+                sourceUpdatedAt, lifecycleStatus, lastSeenAt, missedCollectionCount, analysisStatus, rule,
+                legacyPeriod(applicationMethod, applicationStart, applicationEnd));
+    }
+
+    private static io.aidlink.policy.period.PublicApplicationPeriod legacyPeriod(String method, LocalDate start, LocalDate end) {
+        var window = io.aidlink.policy.period.ApplicationPeriodParser.fromSource(method, start, end);
+        return new io.aidlink.policy.period.PublicApplicationPeriod(window.kind(),
+                io.aidlink.policy.period.ApplicationPeriodParser.sourceText(method), window.startTime(), window.endTime(), "API", null, null, false);
+    }
 
     public Policy(
             long id,

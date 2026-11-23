@@ -59,6 +59,17 @@ export type UserProfile = {
 };
 
 export type Policy = {
+  lifecycleStatus?: "ACTIVE" | "EXPIRED" | "SOURCE_REMOVED" | "ARCHIVED";
+  applicationPeriod?: {
+    kind: "UNKNOWN" | "YEAR_ROUND" | "FIXED";
+    sourceText: string;
+    startTime: string | null;
+    endTime: string | null;
+    origin: "API" | "PROVIDER_REVIEW";
+    verifiedSourceUrl: string | null;
+    verifiedAt: string | null;
+    reviewRequired: boolean;
+  };
   id: number;
   externalId: string;
   name: string;
