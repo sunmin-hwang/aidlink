@@ -190,20 +190,35 @@ export function eligibilityGuidance(value: EligibilityStatus): string {
 }
 
 export function formatPolicyDate(value: string | null): string | null {
-  if (!value) return null;
-
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
   const [year, month, day] = value.split("-").map(Number);
-  if (!year || !month || !day) return value;
+  const date = new Date(`${value}T00:00:00Z`);
+  if (!year || date.getUTCFullYear() !== year || date.getUTCMonth() + 1 !== month
+      || date.getUTCDate() !== day) return null;
   return `${year}. ${month}. ${day}.`;
 }
 
-export function applicationPeriod(policy: Pick<Policy, "applicationStart" | "applicationEnd">): string {
+// Only the collector's dedicated deadline section is evidence for year-round intake.
+// Other instructions may mention an always-open office while recruitment is limited.
+const YEAR_ROUND_DEADLINES = new Set([
+  "상시", "상시신청", "상시접수", "연중", "연중신청", "연중접수",
+  "연중상시", "연중상시신청", "연중상시접수",
+]);
+
+export function applicationPeriod(policy: Pick<Policy, "applicationStart" | "applicationEnd"> & Partial<Pick<Policy, "applicationMethod">>): string {
   const start = formatPolicyDate(policy.applicationStart);
   const end = formatPolicyDate(policy.applicationEnd);
-
-  if (!start && !end) return "상시 신청";
+  if ((policy.applicationStart && !start) || (policy.applicationEnd && !end)
+      || (policy.applicationStart && policy.applicationEnd && policy.applicationStart > policy.applicationEnd)) {
+    return "신청기간 확인 필요";
+  }
+  if (!start && !end) {
+    const deadline = policy.applicationMethod?.replace(/\r\n?/g, "\n")
+      .match(/(?:^|\n)신청기한:[ \t]*([\s\S]*)$/)?.[1].replace(/\s/g, "");
+    return deadline && YEAR_ROUND_DEADLINES.has(deadline) ? "상시 신청" : "신청기간 확인 필요";
+  }
   if (!start) return `${end}까지`;
-  if (!end) return `${start}부터`;
+  if (!end) return `${start}부터 · 종료일 확인 필요`;
   return `${start} ~ ${end}`;
 }
 
