@@ -102,6 +102,44 @@ class PolicyPeriodPostgresIntegrationTest {
         assertThat(service.refreshLifecycle()).isPositive();
         assertThat(service.get(expired.getId()).lifecycleStatus()).isEqualTo("EXPIRED");
     }
+    @Test void monthlyGuidanceSqlMatchesJavaForEveryMonthWithoutChangingConfirmedDates() {
+        for (String text : new String[]{"매년 1월", "매년도 1~2월", "매년 11월~2월 중", "매년 1월 신청",
+                "매년 0월", "매년 1~13월", "매년 1월 초", "매년 연초", "매년 1월(모집기간 별도)",
+                "신청 불필요", "별도의 신청절차가 없음", "기존 대상자는 신청 불필요, 신규는 1월 신청", "접수기관 별 상이", ""}) {
+            for (int month=1; month<=12; month++) {
+                var date=LocalDate.of(2026,month,1);
+                assertThat(jdbc.queryForObject("SELECT policy_application_guidance_open(?,?::date)",Boolean.class,text,date))
+                        .as("%s at %s",text,date).isEqualTo(ApplicationAvailability.guidanceOpen(text,date));
+            }
+        }
+        assertThat(jdbc.queryForObject("SELECT policy_application_available_at('FIXED',NULL,'2025-12-31',NULL,NULL,'신청불필요','2026-01-01 00:00')",Boolean.class)).isFalse();
+        assertThat(jdbc.queryForObject("SELECT policy_application_available_at('FIXED','2026-01-01','2026-01-31','10:00',NULL,'매년 1월','2026-01-01 09:59')",Boolean.class)).isFalse();
+        assertThat(jdbc.queryForObject("SELECT policy_application_available_at('UNKNOWN',NULL,NULL,NULL,NULL,'매년 1월',('2025-12-31 15:00:00+00'::timestamptz AT TIME ZONE 'Asia/Seoul'))",Boolean.class)).isTrue();
+    }
+
+    @Test void openFilterIncludesNoApplicationAndThisMonthWhileKeepingPaginationAndExclusions() throws Exception {
+        int month=LocalDate.now(ZoneId.of("Asia/Seoul")).getMonthValue();
+        var noApplication=policies.saveAndFlush(entity("NO-APPLICATION","신청기한: 신청 불필요"));
+        var recurring=policies.saveAndFlush(entity("RECURRING","신청기한: 매년 "+month+"월"));
+        var always=policies.saveAndFlush(entity("AVAILABLE-ALWAYS","신청기한: 상시신청"));
+        policies.saveAndFlush(entity("OTHER-MONTH","신청기한: 매년 "+(month%12+1)+"월"));
+        policies.saveAndFlush(entity("AGENCY","신청기한: 접수기관 별 상이"));
+        var review=policies.saveAndFlush(entity("RE-REVIEW","신청기한: 신청불필요"));
+        jdbc.update("UPDATE policy SET application_period_review_required=true WHERE id=?",review.getId());
+        var archived=policies.saveAndFlush(entity("ARCHIVED","신청기한: 신청불필요"));
+        archived.archive();
+        policies.saveAndFlush(archived);
+        mvc.perform(get("/api/v1/policies/search").param("q","기간검증").param("openOnly","true"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.content[*].id",org.hamcrest.Matchers.containsInAnyOrder(
+                        noApplication.getId().intValue(),recurring.getId().intValue(),always.getId().intValue())));
+        mvc.perform(get("/api/v1/policies/search").param("q","기간검증").param("openOnly","true").param("size","1").param("page","999"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.content.length()").value(1));
+        assertThat(service.get(recurring.getId()).period().kind()).isEqualTo(ApplicationWindow.Kind.UNKNOWN);
+        assertThat(service.get(recurring.getId()).start()).isNull();
+    }
+
     @Test void adminCsrfProvenanceAndSourceVersionAreRequired() throws Exception {
         String path="/api/v1/admin/policies/periods/"+id+"/verify";
         String body=mapper.writeValueAsString(new io.aidlink.interfaces.api.AdminPolicyPeriodController.Review(REVIEW,URL,EVIDENCE,API));

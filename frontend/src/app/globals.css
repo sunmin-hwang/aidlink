@@ -774,6 +774,13 @@ select {
   overflow-wrap: anywhere;
 }
 
+.availability-filter-note {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
 .application-period-display .application-period-label {
   display: block;
   color: var(--ink);

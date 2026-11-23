@@ -187,10 +187,11 @@ public class InMemoryPolicyCatalog implements PolicyCatalog, EligibilityPolicyCa
                         || policy.provider().toLowerCase(Locale.ROOT)
                         .contains(criteria.provider().toLowerCase(Locale.ROOT)))
                 .filter(policy -> !criteria.openOnly()
-                        || !policy.applicationPeriod().reviewRequired()
-                        && new io.aidlink.policy.period.ApplicationWindow(policy.applicationPeriod().kind(),
-                            policy.applicationStart(), policy.applicationEnd(), policy.applicationPeriod().startTime(), policy.applicationPeriod().endTime())
-                            .openAt(java.time.LocalDateTime.now(java.time.ZoneId.of("Asia/Seoul"))))
+                        || io.aidlink.policy.period.ApplicationAvailability.openAt(
+                            new io.aidlink.policy.period.ApplicationWindow(policy.applicationPeriod().kind(),
+                            policy.applicationStart(), policy.applicationEnd(), policy.applicationPeriod().startTime(), policy.applicationPeriod().endTime()),
+                            policy.applicationPeriod().sourceText(), policy.applicationPeriod().reviewRequired(),
+                            java.time.LocalDateTime.now(java.time.ZoneId.of("Asia/Seoul"))))
                 .filter(policy -> RuleConstraintMatcher.matches(
                         policy.rule(), ConditionField.AGE, criteria.age()))
                 .filter(policy -> RuleConstraintMatcher.matches(

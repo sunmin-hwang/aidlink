@@ -53,7 +53,7 @@ public interface PolicyJpaRepository extends JpaRepository<PolicyEntity, Long> {
               AND (:regionCode IS NULL OR p.region_code IN (:regionCode, 'NATIONWIDE'))
               AND (:provider IS NULL OR lower(p.provider) LIKE lower(concat('%', :provider, '%')))
               AND (:openOnly = false OR
-                NOT p.application_period_review_required AND policy_application_open_now(p.application_period_kind, p.application_start, p.application_end, p.application_start_time, p.application_end_time))
+                NOT p.application_period_review_required AND policy_application_available_now(p.application_period_kind, p.application_start, p.application_end, p.application_start_time, p.application_end_time, p.application_period_raw))
               AND (:excludeDisabled = false OR p.id NOT IN (:excludedPolicyIds))
             ORDER BY
               CASE WHEN :sort = 'RELEVANCE' AND :query IS NOT NULL THEN
@@ -94,7 +94,7 @@ public interface PolicyJpaRepository extends JpaRepository<PolicyEntity, Long> {
               AND (:regionCode IS NULL OR p.region_code IN (:regionCode, 'NATIONWIDE'))
               AND (:provider IS NULL OR lower(p.provider) LIKE lower(concat('%', :provider, '%')))
               AND (:openOnly = false OR
-                NOT p.application_period_review_required AND policy_application_open_now(p.application_period_kind, p.application_start, p.application_end, p.application_start_time, p.application_end_time))
+                NOT p.application_period_review_required AND policy_application_available_now(p.application_period_kind, p.application_start, p.application_end, p.application_start_time, p.application_end_time, p.application_period_raw))
               AND (:excludeDisabled = false OR p.id NOT IN (:excludedPolicyIds))
             """,
             nativeQuery = true)
@@ -127,7 +127,7 @@ public interface PolicyJpaRepository extends JpaRepository<PolicyEntity, Long> {
               AND (:regionCode IS NULL OR p.region_code IN (:regionCode, 'NATIONWIDE'))
               AND (:provider IS NULL OR lower(p.provider) LIKE lower(concat('%', :provider, '%')))
               AND (:openOnly = false OR
-                NOT p.application_period_review_required AND policy_application_open_now(p.application_period_kind, p.application_start, p.application_end, p.application_start_time, p.application_end_time))
+                NOT p.application_period_review_required AND policy_application_available_now(p.application_period_kind, p.application_start, p.application_end, p.application_start_time, p.application_end_time, p.application_period_raw))
             """, nativeQuery = true)
     List<Long> searchRulePolicyIds(
             @Param("query") String query,
