@@ -208,6 +208,40 @@ const YEAR_ROUND_DEADLINES = new Set([
   "연중상시", "연중상시신청", "연중상시접수",
 ]);
 
+function applicationDeadlineText(policy: ApplicationPeriodInput): string {
+  const text = policy.applicationPeriod?.sourceText
+    ?? policy.applicationMethod?.replace(/\r\n?/g, "\n")
+      .match(/(?:^|\n)신청기한:[ \t]*([\s\S]*)$/)?.[1]
+    ?? "";
+  return text.replace(/\s+/g, " ").trim();
+}
+
+function unstructuredApplicationPeriod(policy: ApplicationPeriodInput): string {
+  const text = applicationDeadlineText(policy);
+  const compact = text.replace(/\s/g, "");
+  if (["별도의신청절차가없음", "별도신청절차없음", "개인신청절차없음", "신청불필요", "신청불요"].includes(compact)) {
+    return "별도 신청 없음";
+  }
+  if (/^(?:접수|신청)기관별상이$/.test(compact)) return "기관별 일정 상이";
+  if (["별도공고", "별도공고기한내", "추후공지", "모집공고참조", "세부사항은모집공고문참조"].includes(compact)) return "모집 공고 확인 필요";
+  if (["", "-", "정보없음", "해당없음", "미정"].includes(compact)) return "신청기간 확인 필요";
+  return text;
+}
+
+export function applicationPeriodNotice(policy: ApplicationPeriodInput): string | null {
+  if (policy.applicationPeriod?.reviewRequired) return "수집된 안내가 변경되었습니다. 정확한 일정은 공식 원문을 확인해 주세요.";
+  if ((policy.applicationStart && !formatPolicyDate(policy.applicationStart))
+      || (policy.applicationEnd && !formatPolicyDate(policy.applicationEnd))
+      || (policy.applicationStart && policy.applicationEnd && policy.applicationStart > policy.applicationEnd)) {
+    return "정확한 신청 일정은 공식 원문을 확인해 주세요.";
+  }
+  if (policy.applicationStart || policy.applicationEnd) return null;
+  if (policy.applicationPeriod?.kind === "YEAR_ROUND"
+      || (!policy.applicationPeriod && YEAR_ROUND_DEADLINES.has(applicationDeadlineText(policy).replace(/\s/g, "")))) return null;
+  if (unstructuredApplicationPeriod(policy) === "별도 신청 없음") return "별도 신청이 없는 것으로 안내되어 있습니다. 대상·이용 절차는 공식 원문을 확인해 주세요.";
+  return "수집된 신청기한 안내로, 현재 일정과 다를 수 있습니다. 정확한 사항은 공식 원문을 확인해 주세요.";
+}
+
 export function applicationPeriod(policy: ApplicationPeriodInput): string {
   const period = policy.applicationPeriod;
   const startDate = formatPolicyDate(policy.applicationStart);
@@ -220,10 +254,9 @@ export function applicationPeriod(policy: ApplicationPeriodInput): string {
     return "신청기간 확인 필요";
   }
   if (!start && !end) {
-    if (period) return period.kind === "YEAR_ROUND" ? "상시 신청" : "신청기간 확인 필요";
-    const deadline = policy.applicationMethod?.replace(/\r\n?/g, "\n")
-      .match(/(?:^|\n)신청기한:[ \t]*([\s\S]*)$/)?.[1].replace(/\s/g, "");
-    return deadline && YEAR_ROUND_DEADLINES.has(deadline) ? "상시 신청" : "신청기간 확인 필요";
+    if (period?.kind === "YEAR_ROUND"
+        || (!period && YEAR_ROUND_DEADLINES.has(applicationDeadlineText(policy).replace(/\s/g, "")))) return "상시 신청";
+    return unstructuredApplicationPeriod(policy);
   }
   const range = !start ? `${end}까지` : !end ? `${start}부터 · 종료일 확인 필요` : `${start} ~ ${end}`;
   return `${policy.lifecycleStatus === "EXPIRED" ? "신청 종료 · " : ""}${range}${period?.reviewRequired ? " · 공식 안내 재확인 필요" : ""}`;

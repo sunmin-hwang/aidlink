@@ -3,7 +3,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { serverApiBaseUrl } from "../../lib/api";
 import {
-  applicationPeriod,
   EMPLOYMENT_STATUS_OPTIONS,
   HOUSEHOLD_TYPE_OPTIONS,
   REGION_OPTIONS,
@@ -12,6 +11,7 @@ import {
 } from "../../lib/policy-display";
 import type { PolicySearchPage, PolicySearchSort } from "../../lib/types";
 import { paginationItems } from "../../lib/pagination";
+import { ApplicationPeriodDisplay } from "../../components/ApplicationPeriodDisplay";
 
 export const dynamic = "force-dynamic";
 
@@ -194,7 +194,7 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Sea
                 </div>
                 <div>
                   <span>신청 기간</span>
-                  <p>{applicationPeriod(policy)}</p>
+                  <ApplicationPeriodDisplay policy={policy} />
                 </div>
               </div>
               <div className="catalog-footer">

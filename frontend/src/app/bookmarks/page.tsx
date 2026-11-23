@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch, ApiError } from "../../lib/api";
 import { paginationItems } from "../../lib/pagination";
-import { applicationPeriod, regionLabel, summarizePolicyText } from "../../lib/policy-display";
+import { regionLabel, summarizePolicyText } from "../../lib/policy-display";
+import { ApplicationPeriodDisplay } from "../../components/ApplicationPeriodDisplay";
 import type { PolicyBookmarkPage } from "../../lib/types";
 
 const PAGE_SIZE = 12;
@@ -86,7 +87,7 @@ export default function BookmarksPage() {
                 <p className="catalog-description">{policy.description}</p>
                 <div className="catalog-highlights">
                   <div><span>지원 혜택</span><p>{summarizePolicyText(policy.supportContent)}</p></div>
-                  <div><span>신청 기간</span><p>{applicationPeriod(policy)}</p></div>
+                  <div><span>신청 기간</span><ApplicationPeriodDisplay policy={policy} /></div>
                 </div>
                 <div className="catalog-footer"><span>{policy.provider}</span><strong>자세히 보기</strong></div>
               </Link>
