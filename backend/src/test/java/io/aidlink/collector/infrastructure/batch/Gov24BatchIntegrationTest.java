@@ -14,6 +14,8 @@ import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.core.explore.JobExplorer;
+import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,6 +23,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -33,6 +39,12 @@ class Gov24BatchIntegrationTest {
 
     @Autowired
     private JobLauncher jobLauncher;
+
+    @Autowired
+    private JobRepository jobRepository;
+
+    @Autowired
+    private JobExplorer jobExplorer;
 
     @Autowired
     @Qualifier("gov24PolicySyncJob")
@@ -93,5 +105,21 @@ class Gov24BatchIntegrationTest {
                     assertThat(policy.getLastSeenAt()).isNotNull();
                     assertThat(policy.getMissedCollectionCount()).isZero();
                 });
+    }
+
+    @Test
+    void dailyCompletionSurvivesServiceRestartInPostgres() throws Exception {
+        Clock clock = Clock.fixed(Instant.parse("2099-11-23T00:15:00Z"), ZoneOffset.UTC);
+        var first = new Gov24DailySync(jobLauncher, job, jobRepository, jobExplorer,
+                true, LocalTime.of(3, 0), clock);
+        first.collectIfDue();
+        var completed = first.status();
+        assertThat(completed.status()).isEqualTo("COMPLETED");
+        assertThat(completed.readCount()).isEqualTo(1);
+        assertThat(completed.writeCount()).isEqualTo(1);
+        var restarted = new Gov24DailySync(jobLauncher, job, jobRepository, jobExplorer,
+                true, LocalTime.of(3, 0), clock);
+        restarted.collectIfDue();
+        assertThat(restarted.status().executionId()).isEqualTo(completed.executionId());
     }
 }

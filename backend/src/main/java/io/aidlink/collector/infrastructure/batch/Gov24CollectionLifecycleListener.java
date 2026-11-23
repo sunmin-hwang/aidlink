@@ -37,10 +37,13 @@ public class Gov24CollectionLifecycleListener implements JobExecutionListener {
 
     @Override
     public void beforeJob(JobExecution jobExecution) {
-        jobExecution.getExecutionContext().putLong(
+        // Restarts resume past committed chunks: their lastSeenAt must still count.
+        if (!jobExecution.getExecutionContext().containsKey(STARTED_AT_KEY)) {
+            jobExecution.getExecutionContext().putLong(
                 STARTED_AT_KEY,
                 Instant.now().toEpochMilli()
-        );
+            );
+        }
     }
 
     @Override

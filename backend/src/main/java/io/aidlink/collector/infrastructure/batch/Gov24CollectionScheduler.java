@@ -1,9 +1,7 @@
 package io.aidlink.collector.infrastructure.batch;
 
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.JobParametersBuilder;
-import org.springframework.batch.core.launch.JobLauncher;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,22 +16,21 @@ import org.springframework.stereotype.Component;
 )
 public class Gov24CollectionScheduler {
 
-    private final JobLauncher jobLauncher;
-    private final Job job;
+    private static final Logger log = LoggerFactory.getLogger(Gov24CollectionScheduler.class);
+    private final Gov24DailySync dailySync;
 
-    public Gov24CollectionScheduler(
-            JobLauncher jobLauncher,
-            @Qualifier("gov24PolicySyncJob") Job job
-    ) {
-        this.jobLauncher = jobLauncher;
-        this.job = job;
+    public Gov24CollectionScheduler(Gov24DailySync dailySync) {
+        this.dailySync = dailySync;
     }
 
-    @Scheduled(cron = "${aidlink.collector.gov24.cron:0 0 3 * * *}", zone = "Asia/Seoul")
-    public void collect() throws Exception {
-        jobLauncher.run(job, new JobParametersBuilder()
-                .addLong("scheduledAt", System.currentTimeMillis())
-                .addLong("pageSize", 500L)
-                .toJobParameters());
+    @Scheduled(fixedDelay = 60_000, initialDelay = 10_000)
+    public void collect() {
+        try {
+            dailySync.collectIfDue();
+        } catch (Exception exception) {
+            // HTTP client exception messages can contain the service key; don't log them.
+            log.error("Gov24 daily sync could not run; retrying on next check. failureType={}",
+                    exception.getClass().getSimpleName());
+        }
     }
 }

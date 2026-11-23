@@ -45,6 +45,18 @@ class Gov24CollectionLifecycleListenerTest {
         return execution;
     }
 
+    @Test
+    void restartRetainsOriginalStartTimeSoPreviouslyCommittedChunksAreNotMissing() {
+        FakeNormalizedPolicyStore store = new FakeNormalizedPolicyStore();
+        var listener = new Gov24CollectionLifecycleListener(store, 3);
+        JobExecution restarted = executionWithStatus(BatchStatus.COMPLETED);
+        Instant originalStart = Instant.parse("2026-11-23T00:00:00Z");
+        restarted.getExecutionContext().putLong("gov24.lifecycle.startedAt", originalStart.toEpochMilli());
+        listener.beforeJob(restarted);
+        listener.afterJob(restarted);
+        assertThat(store.collectionStartedAt).isEqualTo(originalStart);
+    }
+
     private static class FakeNormalizedPolicyStore implements NormalizedPolicyStore {
         private int completedCollectionCount;
         private PolicySource source;

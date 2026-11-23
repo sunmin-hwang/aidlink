@@ -91,6 +91,6 @@ aidlink:
       base-url: ${AIDLINK_GOV24_BASE_URL:https://api.odcloud.kr/api/gov24/v3}
       service-key: ${AIDLINK_GOV24_SERVICE_KEY:}
       scheduling-enabled: ${AIDLINK_GOV24_SCHEDULING_ENABLED:false}
-      cron: ${AIDLINK_GOV24_CRON:0 0 3 * * *}
+      daily-time: ${AIDLINK_GOV24_DAILY_TIME:03:00}
       source-removed-threshold: ${AIDLINK_GOV24_SOURCE_REMOVED_THRESHOLD:3}
 

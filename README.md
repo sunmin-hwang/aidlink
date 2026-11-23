@@ -287,7 +287,7 @@ WHERE external_id LIKE 'GOV24:%';
 
 ## 8. GitHub Actions로 서버 깨우기 — 선택
 
-저장소에는 `.github/workflows/render-wake.yml`이 포함되어 있습니다. 이 워크플로는 Render liveness 주소에 요청을 보내 **서버를 깨우기만 합니다. 정책 수집을 실행하지 않습니다.**
+저장소에는 `.github/workflows/render-wake.yml`의 **Daily policy sync** 워크플로가 포함되어 있습니다. 서버를 깨운 뒤 **그날 정책 수집이 실제로 `COMPLETED`가 될 때까지 확인**합니다. 별도 실행용 비밀키나 공개 수집 실행 API는 사용하지 않습니다.
 
 1. 복사한 GitHub 저장소의 **Actions** 탭에서 워크플로 사용을 활성화합니다. Fork에서는 예약 실행이 기본적으로 비활성화될 수 있습니다.
 2. **Settings → Secrets and variables → Actions → Variables → New repository variable**을 엽니다. Secret이 아닌 Repository variable입니다.
@@ -298,19 +298,24 @@ Name: RENDER_BACKEND_URL
 Value: https://YOUR_BACKEND.onrender.com
 ```
 
-4. **Actions → Wake Render backend → Run workflow → main → Run workflow**로 수동 실행합니다.
-5. 실행 결과가 성공하고 로그에 `Backend is awake.`가 출력되는지 확인합니다.
+4. 아래 Render 자동 수집 환경 변수를 설정하고 새 코드를 배포합니다.
+5. **Actions → Daily policy sync → Run workflow → main → Run workflow**로 수동 실행합니다.
+6. 실행 로그에 `Today's government policy collection completed.`가 출력되는지 확인합니다. 서버 기동만 성공했다고 수집 완료로 처리하지 않습니다.
 
-현재 예약은 매일 **한국 시간 02:55**, GitHub cron 표현식은 UTC 기준 `55 17 * * *`입니다. 예약 워크플로는 기본 브랜치의 파일을 사용합니다. GitHub 사정에 따라 실행이 늦어지거나 비활성화될 수 있으므로 정확한 시각을 보장하지 않습니다. [GitHub 예약 이벤트 안내](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
+예약은 매일 **한국 시간 03:07, 06:07, 09:07**입니다. 뒤의 실행은 지연·실패에 대한 보충 확인이며 이미 완료된 날에는 중복 수집하지 않습니다. 예약 워크플로는 기본 브랜치의 파일을 사용합니다. GitHub 사정에 따라 실행이 늦어지거나 비활성화될 수 있으므로 정확한 시각을 보장하지 않습니다. [GitHub 예약 이벤트 안내](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
 
 자동 정책 수집을 추가로 원할 때만 Render의 다음 값을 설정합니다.
 
 ```text
 AIDLINK_GOV24_SCHEDULING_ENABLED=true
-AIDLINK_GOV24_CRON=0 0 3 * * *
+AIDLINK_GOV24_DAILY_TIME=03:00
 ```
 
-위 Spring cron은 한국 시간 03:00입니다. 정부24 키가 필요하며 백엔드가 그 시각에 실행 중이어야 합니다. 무료 서버가 잠들어 있던 동안의 스케줄은 자동 보충되지 않고, 깨우기 요청도 정확한 정시 실행을 보장하지 않습니다.
+정부24 키가 필요합니다. 백엔드는 실행 중 매분 한국 날짜와 시각을 확인하고, 03:00 이후 그날 성공한 수집이 없으면 실행합니다. 서버가 늦게 깨어나거나 재시작되어도 DB에 저장된 날짜별 Job 이력으로 판단합니다. 실패한 작업은 5분 후 같은 작업을 재시도합니다. 여러 날 잠들어 있었다면 과거 날짜별 수집을 반복하지 않고 현재 날짜의 최신 정책을 수집합니다.
+
+`GET https://YOUR_BACKEND.onrender.com/api/v1/collections/gov24/status`에서 `enabled`, `collectionDate`, `status`, `executionId`와 해당 실행의 처리 건수를 조회할 수 있습니다. 읽기 전용이며 작업을 실행하거나 비밀 정보를 노출하지 않습니다. 워크플로는 이 상태를 최대 25분 확인하고, 완료되지 않으면 실패로 표시합니다. 수집 중에도 상태 요청을 유지해 Render가 잠들지 않도록 합니다.
+
+프로세스가 수집 도중 강제로 종료되어 DB에 `STARTED`가 남으면 중복 실행을 피하기 위해 자동으로 덮어쓰지 않습니다. 실제 실행 중인 프로세스가 없는지 Logs에서 확인하고 해당 Batch 실행 상태를 운영자가 점검해야 합니다. `FAILED`·`STOPPED` 작업은 자동 재시도하며 `UNKNOWN`·`ABANDONED`는 수동 점검 대상입니다.
 
 ## 9. 수정 사항 재배포
 
