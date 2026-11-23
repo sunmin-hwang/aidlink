@@ -187,8 +187,10 @@ public class InMemoryPolicyCatalog implements PolicyCatalog, EligibilityPolicyCa
                         || policy.provider().toLowerCase(Locale.ROOT)
                         .contains(criteria.provider().toLowerCase(Locale.ROOT)))
                 .filter(policy -> !criteria.openOnly()
-                        || (policy.applicationStart() == null || !policy.applicationStart().isAfter(today))
-                        && (policy.applicationEnd() == null || !policy.applicationEnd().isBefore(today)))
+                        || !policy.applicationPeriod().reviewRequired()
+                        && new io.aidlink.policy.period.ApplicationWindow(policy.applicationPeriod().kind(),
+                            policy.applicationStart(), policy.applicationEnd(), policy.applicationPeriod().startTime(), policy.applicationPeriod().endTime())
+                            .openAt(java.time.LocalDateTime.now(java.time.ZoneId.of("Asia/Seoul"))))
                 .filter(policy -> RuleConstraintMatcher.matches(
                         policy.rule(), ConditionField.AGE, criteria.age()))
                 .filter(policy -> RuleConstraintMatcher.matches(
@@ -342,7 +344,7 @@ public class InMemoryPolicyCatalog implements PolicyCatalog, EligibilityPolicyCa
     @Override
     public Optional<Policy> findById(long policyId) {
         return policies.stream()
-                .filter(policy -> policy.lifecycleStatus() == PolicyLifecycleStatus.ACTIVE)
+                .filter(policy -> policy.lifecycleStatus() == PolicyLifecycleStatus.ACTIVE || policy.lifecycleStatus() == PolicyLifecycleStatus.EXPIRED)
                 .filter(policy -> policy.id() == policyId)
                 .findFirst();
     }

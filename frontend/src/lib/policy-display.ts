@@ -198,6 +198,9 @@ export function formatPolicyDate(value: string | null): string | null {
   return `${year}. ${month}. ${day}.`;
 }
 
+export type ApplicationPeriodInput = Pick<Policy, "applicationStart" | "applicationEnd">
+  & Partial<Pick<Policy, "applicationMethod" | "applicationPeriod" | "lifecycleStatus">>;
+
 // Only the collector's dedicated deadline section is evidence for year-round intake.
 // Other instructions may mention an always-open office while recruitment is limited.
 const YEAR_ROUND_DEADLINES = new Set([
@@ -205,21 +208,30 @@ const YEAR_ROUND_DEADLINES = new Set([
   "연중상시", "연중상시신청", "연중상시접수",
 ]);
 
-export function applicationPeriod(policy: Pick<Policy, "applicationStart" | "applicationEnd"> & Partial<Pick<Policy, "applicationMethod">>): string {
-  const start = formatPolicyDate(policy.applicationStart);
-  const end = formatPolicyDate(policy.applicationEnd);
+export function applicationPeriod(policy: ApplicationPeriodInput): string {
+  const period = policy.applicationPeriod;
+  const startDate = formatPolicyDate(policy.applicationStart);
+  const endDate = formatPolicyDate(policy.applicationEnd);
+  const start = startDate && `${startDate}${period?.startTime ? ` ${period.startTime.slice(0, 5)}` : ""}`;
+  const end = endDate && `${endDate}${period?.endTime ? ` ${period.endTime.slice(0, 5)}` : ""}`;
+
   if ((policy.applicationStart && !start) || (policy.applicationEnd && !end)
       || (policy.applicationStart && policy.applicationEnd && policy.applicationStart > policy.applicationEnd)) {
     return "신청기간 확인 필요";
   }
   if (!start && !end) {
+    if (period) return period.kind === "YEAR_ROUND" ? "상시 신청" : "신청기간 확인 필요";
     const deadline = policy.applicationMethod?.replace(/\r\n?/g, "\n")
       .match(/(?:^|\n)신청기한:[ \t]*([\s\S]*)$/)?.[1].replace(/\s/g, "");
     return deadline && YEAR_ROUND_DEADLINES.has(deadline) ? "상시 신청" : "신청기간 확인 필요";
   }
-  if (!start) return `${end}까지`;
-  if (!end) return `${start}부터 · 종료일 확인 필요`;
-  return `${start} ~ ${end}`;
+  const range = !start ? `${end}까지` : !end ? `${start}부터 · 종료일 확인 필요` : `${start} ~ ${end}`;
+  return `${policy.lifecycleStatus === "EXPIRED" ? "신청 종료 · " : ""}${range}${period?.reviewRequired ? " · 공식 안내 재확인 필요" : ""}`;
+}
+
+export function applicationMethodDescription(value: string): string {
+  return value.replace(/\r\n?/g, "\n").replace(/(?:^|\n)신청기한:[\s\S]*$/, "").trim()
+    || "신청방법은 제공기관 안내를 확인해 주세요.";
 }
 
 export function summarizePolicyText(value: string, maxLength = 82): string {

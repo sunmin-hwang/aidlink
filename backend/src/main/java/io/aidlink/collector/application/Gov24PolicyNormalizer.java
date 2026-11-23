@@ -43,6 +43,7 @@ public class Gov24PolicyNormalizer {
                 section("신청기한", text(payload, "신청기한", "deadline"))
         );
         String requiredDocuments = text(payload, "구비서류", "documents");
+        var period = io.aidlink.policy.period.ApplicationPeriodParser.parse(text(payload, "신청기한", "deadline"));
         String sourceUrl = firstNonBlank(text(payload, "상세조회URL", "상세URL", "sourceUrl"), "");
         String applicationUrl = firstNonBlank(
                 text(payload, "온라인신청사이트URL", "온라인신청URL", "applicationUrl"),
@@ -60,8 +61,8 @@ public class Gov24PolicyNormalizer {
                 defaultText(description),
                 defaultText(target),
                 defaultText(supportContent),
-                null,
-                null,
+                period.start(),
+                period.end(),
                 defaultText(applicationMethod),
                 defaultText(requiredDocuments),
                 applicationUrl,

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { applicationPeriod } from "../src/lib/policy-display.ts";
+import { applicationPeriod, applicationMethodDescription } from "../src/lib/policy-display.ts";
 
 const withoutDates = (applicationMethod = "") => ({ applicationStart: null, applicationEnd: null, applicationMethod });
 
@@ -32,4 +32,16 @@ test("invalid or reversed dates require confirmation without a year-round fallba
     { applicationStart: null, applicationEnd: "not-a-date" },
   ]) assert.equal(applicationPeriod({ ...withoutDates("신청기한: 상시신청"), ...dates }), "신청기간 확인 필요");
   assert.equal(applicationPeriod({ ...withoutDates(), applicationStart: "2024-02-29" }), "2024. 2. 29.부터 · 종료일 확인 필요");
+});
+
+test("verified extension shows effective dates, known time and expiry without using the older API deadline", () => {
+  const policy = { applicationStart: "2026-10-07", applicationEnd: "2026-10-20", lifecycleStatus: "EXPIRED",
+    applicationPeriod: { kind: "FIXED", sourceText: "2026.10.07~2026.10.15", startTime: "10:00:00", endTime: null, origin: "PROVIDER_REVIEW", verifiedAt: "2026-11-23T00:00:00Z", verifiedSourceUrl: "https://provider.or.kr/period", reviewRequired: false } };
+  assert.equal(applicationPeriod(policy), "신청 종료 · 2026. 10. 7. 10:00 ~ 2026. 10. 20.");
+  assert.equal(applicationPeriod({ ...policy, applicationPeriod: { ...policy.applicationPeriod, reviewRequired: true } }), "신청 종료 · 2026. 10. 7. 10:00 ~ 2026. 10. 20. · 공식 안내 재확인 필요");
+});
+
+test("application instructions do not repeat the stale API deadline as current instructions", () => {
+  assert.equal(applicationMethodDescription("온라인 신청\r\n\r\n신청기한: 2026.10.07~2026.10.15"), "온라인 신청");
+  assert.equal(applicationMethodDescription("방문 또는 전화 상담"), "방문 또는 전화 상담");
 });

@@ -14,6 +14,13 @@ import java.util.Optional;
 @Profile("postgres")
 public interface PolicyJpaRepository extends JpaRepository<PolicyEntity, Long> {
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from PolicyEntity p where p.id = :id")
+    Optional<PolicyEntity> findOneForPeriodUpdate(@Param("id") long id);
+
+    @Query("select p from PolicyEntity p left join fetch p.rule where p.id = :id and p.lifecycleStatus in (io.aidlink.policy.domain.PolicyLifecycleStatus.ACTIVE, io.aidlink.policy.domain.PolicyLifecycleStatus.EXPIRED)")
+    Optional<PolicyEntity> findOnePublicWithRule(@Param("id") long id);
+
     Optional<PolicyEntity> findByExternalId(String externalId);
 
     @Query("select p from PolicyEntity p left join fetch p.rule where p.lifecycleStatus = :status order by p.id")
@@ -46,8 +53,7 @@ public interface PolicyJpaRepository extends JpaRepository<PolicyEntity, Long> {
               AND (:regionCode IS NULL OR p.region_code IN (:regionCode, 'NATIONWIDE'))
               AND (:provider IS NULL OR lower(p.provider) LIKE lower(concat('%', :provider, '%')))
               AND (:openOnly = false OR
-                (p.application_start IS NULL OR p.application_start <= CURRENT_DATE)
-                AND (p.application_end IS NULL OR p.application_end >= CURRENT_DATE))
+                NOT p.application_period_review_required AND policy_application_open_now(p.application_period_kind, p.application_start, p.application_end, p.application_start_time, p.application_end_time))
               AND (:excludeDisabled = false OR p.id NOT IN (:excludedPolicyIds))
             ORDER BY
               CASE WHEN :sort = 'RELEVANCE' AND :query IS NOT NULL THEN
@@ -88,8 +94,7 @@ public interface PolicyJpaRepository extends JpaRepository<PolicyEntity, Long> {
               AND (:regionCode IS NULL OR p.region_code IN (:regionCode, 'NATIONWIDE'))
               AND (:provider IS NULL OR lower(p.provider) LIKE lower(concat('%', :provider, '%')))
               AND (:openOnly = false OR
-                (p.application_start IS NULL OR p.application_start <= CURRENT_DATE)
-                AND (p.application_end IS NULL OR p.application_end >= CURRENT_DATE))
+                NOT p.application_period_review_required AND policy_application_open_now(p.application_period_kind, p.application_start, p.application_end, p.application_start_time, p.application_end_time))
               AND (:excludeDisabled = false OR p.id NOT IN (:excludedPolicyIds))
             """,
             nativeQuery = true)
@@ -122,8 +127,7 @@ public interface PolicyJpaRepository extends JpaRepository<PolicyEntity, Long> {
               AND (:regionCode IS NULL OR p.region_code IN (:regionCode, 'NATIONWIDE'))
               AND (:provider IS NULL OR lower(p.provider) LIKE lower(concat('%', :provider, '%')))
               AND (:openOnly = false OR
-                (p.application_start IS NULL OR p.application_start <= CURRENT_DATE)
-                AND (p.application_end IS NULL OR p.application_end >= CURRENT_DATE))
+                NOT p.application_period_review_required AND policy_application_open_now(p.application_period_kind, p.application_start, p.application_end, p.application_start_time, p.application_end_time))
             """, nativeQuery = true)
     List<Long> searchRulePolicyIds(
             @Param("query") String query,

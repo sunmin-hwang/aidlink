@@ -36,7 +36,7 @@ public class JpaPolicyBookmarkService implements PolicyBookmarkOperations {
                 FROM policy_bookmark bookmark
                 JOIN policy ON policy.id = bookmark.policy_id
                 WHERE bookmark.user_id = ?
-                  AND policy.lifecycle_status = 'ACTIVE'
+                  AND policy.lifecycle_status IN ('ACTIVE', 'EXPIRED')
                 """,
                 Long.class,
                 userId
@@ -54,7 +54,7 @@ public class JpaPolicyBookmarkService implements PolicyBookmarkOperations {
                 FROM policy_bookmark bookmark
                 JOIN policy ON policy.id = bookmark.policy_id
                 WHERE bookmark.user_id = ?
-                  AND policy.lifecycle_status = 'ACTIVE'
+                  AND policy.lifecycle_status IN ('ACTIVE', 'EXPIRED')
                 ORDER BY bookmark.created_at DESC, bookmark.policy_id DESC
                 LIMIT ? OFFSET ?
                 """,
