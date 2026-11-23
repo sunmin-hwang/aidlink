@@ -134,7 +134,7 @@ AIDLINK_DB_PASSWORD=Neon에서 확인한 실제 비밀번호
 | `AIDLINK_DB_PASSWORD` | Neon Password | 실제 비밀번호 |
 | `SERVER_PORT` | `10000` | Render 수신 포트 |
 | `SERVER_FORWARD_HEADERS_STRATEGY` | `framework` | HTTPS 프록시 헤더 처리 |
-| `JAVA_TOOL_OPTIONS` | `-Xms64m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC` | 무료 인스턴스 메모리 설정 |
+| `JAVA_TOOL_OPTIONS` | `-Xms64m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -XX:TieredStopAtLevel=1` | 무료 인스턴스 메모리·기동 CPU 설정 |
 | `SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE` | `3` | DB 연결 수 제한 |
 | `SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE` | `0` | 유휴 연결 최소화 |
 | `AIDLINK_ENVIRONMENT` | `render-demo` | 로그 환경 이름 |
@@ -350,6 +350,7 @@ Vercel은 `dev` push에도 Preview를 만들 수 있습니다. Preview의 환경
 | 저장소가 Render/Vercel 목록에 없음 | GitHub 앱의 저장소 접근 권한과 연결 계정을 확인합니다. |
 | Render 빌드에서 파일을 찾지 못함 | Root Directory=`backend`, Dockerfile=`./Dockerfile`, Context=`.`인지 확인합니다. |
 | Render에서 메모리 부족·프로세스 종료 | `JAVA_TOOL_OPTIONS`를 확인하고 기본 배포에서 Redis·AI·관측 수집기가 비활성화되어 있는지 확인합니다. |
+| Render 포트 검사 타임아웃 | `Tomcat initialized`와 `Tomcat started`는 다릅니다. 포트 10000 초기화 후에도 시작 완료가 없다면 그 사이의 초기화·DB·메모리 로그를 확인합니다. 위 JVM 설정은 0.1 CPU·512MB Docker에서 기동·UP을 검증한 값입니다. |
 | DB 접속 실패 | PostgreSQL 17 프로젝트의 Host·DB·Role·Password가 서로 같은 연결 정보인지 확인합니다. JDBC 접두어와 `sslmode=require`도 확인합니다. |
 | Flyway 시작 실패 | Logs의 최초 DB 오류를 확인합니다. 기존 마이그레이션 SQL을 임의 수정하거나 `flyway_schema_history`를 삭제하지 않습니다. |
 | 사이트는 열리지만 API가 502/504 또는 시간 초과 | Render liveness를 직접 열고 Java 기동을 기다린 뒤 다시 시도합니다. 계속 실패하면 Render Logs와 Vercel의 백엔드 URL을 확인합니다. |
