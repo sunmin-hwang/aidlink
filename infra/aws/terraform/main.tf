@@ -155,7 +155,7 @@ resource "aws_instance" "aidlink" {
   associate_public_ip_address = false
   vpc_security_group_ids      = [aws_security_group.app.id]
 
-  user_data                   = file("${path.module}/../bootstrap-ec2.sh")
+  user_data                   = replace(file("${path.module}/../bootstrap-ec2.sh"), "\r\n", "\n")
   user_data_replace_on_change = false
 
   credit_specification {
@@ -175,6 +175,12 @@ resource "aws_instance" "aidlink" {
   }
 
   tags = { Name = "aidlink-app" }
+
+  lifecycle {
+    prevent_destroy = true
+    # The provider reports this as true once the separately managed EIP attaches.
+    ignore_changes = [associate_public_ip_address]
+  }
 }
 
 resource "aws_eip" "aidlink" {
