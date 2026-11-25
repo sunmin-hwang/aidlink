@@ -1,0 +1,67 @@
+name: aidlink-aws
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  backend:
+    image: ${AIDLINK_BACKEND_IMAGE:?Set AIDLINK_BACKEND_IMAGE}
+    platform: linux/arm64
+    env_file: .env.aws
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -XX:TieredStopAtLevel=1
+      SPRING_PROFILES_ACTIVE: postgres
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
+      SERVER_TOMCAT_THREADS_MAX: "40"
+      SERVER_TOMCAT_THREADS_MIN_SPARE: "4"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "5"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+      AIDLINK_REDIS_ENABLED: "false"
+      AIDLINK_OTLP_TRACING_ENABLED: "false"
+      AIDLINK_OPENAI_ENABLED: "false"
+      AIDLINK_AI_PIPELINE_SCHEDULING_ENABLED: "false"
+      AIDLINK_ENVIRONMENT: aws-ec2
+      AIDLINK_SECURE_COOKIE: "true"
+      AIDLINK_CORS_ALLOWED_ORIGINS: https://${AIDLINK_DOMAIN:?Set AIDLINK_DOMAIN}
+      AIDLINK_REGISTRATION_ENABLED: "false"
+      AIDLINK_BOOTSTRAP_ADMIN_ENABLED: "false"
+      AIDLINK_GOV24_SCHEDULING_ENABLED: ${AIDLINK_GOV24_SCHEDULING_ENABLED:-false}
+      AIDLINK_GOV24_DAILY_TIME: "03:00"
+    expose: ["8080"]
+    ports: ["127.0.0.1:18080:8080"]
+    mem_limit: 512m
+    restart: unless-stopped
+    logging: *logging
+  frontend:
+    image: ${AIDLINK_FRONTEND_IMAGE:?Set AIDLINK_FRONTEND_IMAGE}
+    platform: linux/arm64
+    environment:
+      BACKEND_API_BASE_URL: http://backend:8080
+      NEXT_PUBLIC_API_BASE_URL: ""
+      NODE_OPTIONS: --max-old-space-size=256
+    expose: ["3000"]
+    ports: ["127.0.0.1:13000:3000"]
+    mem_limit: 384m
+    restart: unless-stopped
+    logging: *logging
+    depends_on: [backend]
+  caddy:
+    image: caddy:2.10.2-alpine
+    environment:
+      AIDLINK_DOMAIN: ${AIDLINK_DOMAIN:?Set AIDLINK_DOMAIN}
+    ports: ["80:80", "443:443", "443:443/udp"]
+    volumes:
+      - ./infra/caddy/Caddyfile.aws:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    mem_limit: 64m
+    restart: unless-stopped
+    logging: *logging
+    depends_on: [frontend, backend]
+
+volumes:
+  caddy-data:
+  caddy-config:

@@ -7,7 +7,19 @@ variable "region" {
 variable "aws_profile" {
   description = "Local AWS CLI profile used by Terraform"
   type        = string
-  default     = "default"
+  default     = null
+}
+
+variable "aws_account_id" {
+  description = "Account guard: only deploy into this AWS account"
+  type        = string
+  default     = "428717123055"
+}
+
+variable "availability_zone" {
+  description = "Keep the application and Single-AZ database in the same AZ"
+  type        = string
+  default     = "ap-northeast-2a"
 }
 
 variable "instance_type" {

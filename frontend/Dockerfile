@@ -6,7 +6,9 @@ RUN npm ci
 FROM node:24.21.0-alpine AS build
 WORKDIR /app
 ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+ARG BACKEND_API_BASE_URL=http://backend:8080
 ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+ENV BACKEND_API_BASE_URL=${BACKEND_API_BASE_URL}
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 RUN npm run build

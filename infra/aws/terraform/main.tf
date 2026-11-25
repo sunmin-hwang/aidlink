@@ -9,6 +9,18 @@ data "aws_subnets" "default" {
   }
 }
 
+data "aws_subnet" "application" {
+  vpc_id            = data.aws_vpc.default.id
+  availability_zone = var.availability_zone
+  default_for_az    = true
+}
+
+resource "aws_db_subnet_group" "aidlink" {
+  name       = "aidlink-db-subnets"
+  subnet_ids = data.aws_subnets.default.ids
+  tags       = { Name = "aidlink-db-subnets" }
+}
+
 data "aws_ami" "ubuntu_arm" {
   most_recent = true
   owners      = ["099720109477"]
@@ -109,12 +121,23 @@ resource "aws_db_instance" "aidlink" {
   password = var.db_password
   port     = 5432
 
+  availability_zone    = var.availability_zone
+  db_subnet_group_name = aws_db_subnet_group.aidlink.name
+  multi_az             = false
+
   vpc_security_group_ids     = [aws_security_group.database.id]
   publicly_accessible        = false
-  backup_retention_period    = 1
+  backup_retention_period    = 7
+  backup_window              = "19:00-19:30"
   auto_minor_version_upgrade = true
-  deletion_protection        = false
-  skip_final_snapshot        = true
+  deletion_protection        = true
+  skip_final_snapshot        = false
+  final_snapshot_identifier  = "aidlink-final"
+  copy_tags_to_snapshot      = true
+
+  lifecycle {
+    prevent_destroy = true
+  }
 
   tags = { Name = "aidlink-db" }
 }
@@ -125,11 +148,12 @@ resource "aws_key_pair" "aidlink" {
 }
 
 resource "aws_instance" "aidlink" {
-  ami                    = data.aws_ami.ubuntu_arm.id
-  instance_type          = var.instance_type
-  key_name               = aws_key_pair.aidlink.key_name
-  subnet_id              = data.aws_subnets.default.ids[0]
-  vpc_security_group_ids = [aws_security_group.app.id]
+  ami                         = data.aws_ami.ubuntu_arm.id
+  instance_type               = var.instance_type
+  key_name                    = aws_key_pair.aidlink.key_name
+  subnet_id                   = data.aws_subnet.application.id
+  associate_public_ip_address = false
+  vpc_security_group_ids      = [aws_security_group.app.id]
 
   user_data                   = file("${path.module}/../bootstrap-ec2.sh")
   user_data_replace_on_change = false
