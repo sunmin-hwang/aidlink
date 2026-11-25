@@ -35,7 +35,7 @@
    bash /opt/aidlink/infra/aws/deploy.sh BACKEND_IMAGE_REFERENCE FRONTEND_IMAGE_REFERENCE
    ```
 
-6. 로그인·세션·검색·상세·프로필 표시를 검증하고 DNS를 전환해 HTTPS 인증서를 확인한다. 보호 데이터에 차이가 있으면 전환하지 않는다. 검증 후 AWS 일일 수집을 활성화하고 Render 중복 실행을 막는다.
+6. 로그인·세션·검색·상세·프로필 표시를 검증하고 DNS를 전환해 HTTPS 인증서를 확인한다. 보호 데이터에 차이가 있으면 전환하지 않는다. 검증 후 AWS 일일 수집을 활성화한다.
 7. 30명 시연 전 로그인/검색/상세 흐름으로 별도 부하 검증한다. 기동 성공이나 container running만으로 처리 성능을 확정하지 않는다.
 
 GitHub 표준 ARM runner: https://docs.github.com/en/actions/reference/runners/github-hosted-runners
