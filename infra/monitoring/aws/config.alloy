@@ -1,0 +1,32 @@
+// Read only these application JSON log files; no Docker socket or logging plugin.
+loki.source.file "application" {
+  targets = [
+    {"__path__" = sys.env("BACKEND_LOG_PATH"), "service" = "backend", "environment" = "aws-ec2"},
+    {"__path__" = sys.env("FRONTEND_LOG_PATH"), "service" = "frontend", "environment" = "aws-ec2"},
+    {"__path__" = sys.env("CADDY_LOG_PATH"), "service" = "caddy", "environment" = "aws-ec2"},
+  ]
+  tail_from_end = true
+  forward_to = [loki.process.application.receiver]
+}
+
+loki.process "application" {
+  stage.docker {}
+  stage.json {
+    expressions = {level = "\"log.level\" || level"}
+  }
+  stage.labels {
+    values = {level = ""}
+  }
+  stage.label_drop {
+    values = ["filename"]
+  }
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+    batch_wait = "2s"
+    batch_size = "128KiB"
+  }
+}

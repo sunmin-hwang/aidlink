@@ -1,0 +1,107 @@
+name: aidlink-monitoring
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "5m"
+    max-file: "2"
+
+services:
+  loki:
+    image: grafana/loki:3.7.8
+    command: ["-config.file=/etc/loki/loki.yml"]
+    environment:
+      GOMEMLIMIT: 140MiB
+      GOMAXPROCS: "1"
+    volumes:
+      - ./infra/monitoring/aws/loki.yml:/etc/loki/loki.yml:ro
+      - loki-data:/loki
+    ports: ["127.0.0.1:13100:3100"]
+    networks: [application]
+    mem_limit: 192m
+    cpus: 0.40
+    restart: unless-stopped
+    logging: *logging
+  alloy:
+    image: grafana/alloy:v1.20.1
+    user: "0:0"
+    command:
+      - run
+      - --server.http.listen-addr=127.0.0.1:12345
+      - --storage.path=/var/lib/alloy/data
+      - --disable-reporting
+      - /etc/alloy/config.alloy
+    env_file: .env.monitoring-targets
+    environment:
+      GOMEMLIMIT: 96MiB
+      GOMAXPROCS: "1"
+    volumes:
+      - ./infra/monitoring/aws/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - alloy-data:/var/lib/alloy/data
+    networks: [application]
+    mem_limit: 128m
+    cpus: 0.20
+    restart: unless-stopped
+    logging: *logging
+    depends_on: [loki]
+  prometheus:
+    image: prom/prometheus:v3.5.5
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=2d
+      - --storage.tsdb.retention.size=256MB
+      - --query.max-concurrency=2
+      - --query.max-samples=1000000
+    environment:
+      GOMEMLIMIT: 90MiB
+      GOMAXPROCS: "1"
+    volumes:
+      - ./infra/monitoring/aws/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports: ["127.0.0.1:19090:9090"]
+    networks: [application]
+    mem_limit: 128m
+    cpus: 0.25
+    restart: unless-stopped
+    logging: *logging
+  grafana:
+    image: grafana/grafana:13.2.3
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env.monitoring}
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
+      GF_PLUGINS_PREINSTALL_AUTO_UPDATE: "false"
+      GF_LIVE_MAX_CONNECTIONS: "0"
+      GF_SECURITY_DISABLE_GRAVATAR: "true"
+      GF_SERVER_ROOT_URL: http://localhost:13002/
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/system.json
+      GOMEMLIMIT: 180MiB
+      GOMAXPROCS: "1"
+    volumes:
+      - ./infra/monitoring/aws/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/monitoring/aws/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports: ["127.0.0.1:13002:3000"]
+    networks: [application]
+    mem_limit: 256m
+    cpus: 0.25
+    restart: unless-stopped
+    logging: *logging
+    depends_on: [prometheus]
+
+networks:
+  application:
+    external: true
+    name: aidlink-aws_default
+volumes:
+  loki-data:
+  alloy-data:
+  prometheus-data:
+  grafana-data:
