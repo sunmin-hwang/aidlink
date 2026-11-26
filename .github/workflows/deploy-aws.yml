@@ -116,6 +116,13 @@ jobs:
           backend=$(cat "$RUNNER_TEMP/aidlink-images/backend.image")
           frontend=$(cat "$RUNNER_TEMP/aidlink-images/frontend.image")
           bash /opt/aidlink/infra/aws/deploy.sh "$backend" "$frontend"
+      - name: Update optional lightweight monitoring
+        run: |
+          install -m 644 docker-compose.aws-monitoring.yml /opt/aidlink/docker-compose.aws-monitoring.yml
+          install -d /opt/aidlink/infra/monitoring/aws
+          cp -R infra/monitoring/aws/. /opt/aidlink/infra/monitoring/aws/
+          install -D -m 700 infra/aws/deploy-monitoring.sh /opt/aidlink/infra/aws/deploy-monitoring.sh
+          bash /opt/aidlink/infra/aws/deploy-monitoring.sh
       - name: Remove temporary registry login
         if: always()
         run: |

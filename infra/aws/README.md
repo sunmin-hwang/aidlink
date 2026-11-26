@@ -38,4 +38,25 @@
 6. 로그인·세션·검색·상세·프로필 표시를 검증하고 DNS를 전환해 HTTPS 인증서를 확인한다. 보호 데이터에 차이가 있으면 전환하지 않는다. 검증 후 AWS 일일 수집을 활성화한다.
 7. 30명 시연 전 로그인/검색/상세 흐름으로 별도 부하 검증한다. 기동 성공이나 container running만으로 처리 성능을 확정하지 않는다.
 
+## 선택: 경량 모니터링
+
+`docker-compose.aws-monitoring.yml`은 앱과 별도 Compose 프로젝트로 Prometheus·Grafana·Loki·Alloy를 실행한다. Tempo는 제외하고 앱의 JSON 로그 드라이버는 유지한다. Alloy는 지정한 backend/frontend/Caddy JSON 파일만 읽기 전용으로 수집하며 Docker 소켓은 마운트하지 않는다. Prometheus는 60초마다 내부 메트릭을 수집하며 2일 또는 256MB의 TSDB 보관 정책을 사용한다. WAL·임시 파일은 별도 공간을 사용할 수 있다. 메모리 상한은 Prometheus 128MiB, Grafana 256MiB, Loki 192MiB, Alloy 128MiB로 합계 704MiB다. CPU 상한은 각각 0.25, 0.25, 0.40, 0.20이다. Loki 로그 보관은 compactor를 켜서 24시간으로 설정했으며 비동기 삭제라 정확한 디스크 용량 상한은 아니다.
+
+서버 `/opt/aidlink/.env.monitoring`에 `GRAFANA_ADMIN_PASSWORD`를 지정하고 권한을 600으로 제한한다. 최초 실행 시 생성할 관리자 암호이므로 기존 Grafana 볼륨의 암호를 이 파일 수정만으로 바꿀 수는 없다. 이 파일이 없으면 Actions 배포에서 모니터링 시작을 건너뛴다. 배포 스크립트는 앱 교체 후 현재 JSON 로그 경로를 `.env.monitoring-targets`에 생성한다. 이 파일도 Git에 넣지 않는다. Alloy는 처음 추적하는 파일의 끝에서 시작하므로 도입 전 로그 전체를 재수집하지 않으며 기존 위치 정보는 볼륨에 보존한다. 수동 시작은 `bash /opt/aidlink/infra/aws/deploy-monitoring.sh`이다.
+
+Grafana·Prometheus는 서버 loopback에만 열리며 Caddy와 보안 그룹에는 공개 경로를 추가하지 않는다. 유지보수 PC에서 아래 터널을 유지하고 `http://localhost:13002`로 접속한다. 로그인 이름은 `admin`이며 암호는 서버 환경 파일에서 확인한다.
+
+```bash
+ssh -i YOUR_PRIVATE_KEY -N -L 13002:127.0.0.1:13002 ubuntu@YOUR_EC2_IP
+```
+
+메트릭은 JVM·백엔드 HTTP·DB 풀 중심이며 EC2 전체 메모리나 RDS 인스턴스 상태를 수집하는 exporter는 포함하지 않는다. 알림 규칙·외부 알림 전송도 이번 경량 구성에는 포함하지 않는다. `infra/monitoring/aws/dashboards/system.json`과 `logs.json`을 자동 제공하며 1분마다 갱신한다. Loki는 서버 loopback 13100에만 열리며 Grafana에서 조회한다. 앱 재배포 후 세션 만료로 재로그인이 필요할 수 있다.
+
+모니터링만 중단할 때는 서버에서 다음을 실행한다. 볼륨은 유지한다.
+
+```bash
+cd /opt/aidlink
+docker compose --env-file .env.monitoring -f docker-compose.aws-monitoring.yml stop
+```
+
 GitHub 표준 ARM runner: https://docs.github.com/en/actions/reference/runners/github-hosted-runners
