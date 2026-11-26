@@ -12,7 +12,7 @@ loki.source.file "application" {
 loki.process "application" {
   stage.docker {}
   stage.json {
-    expressions = {level = "\"log.level\" || level"}
+    expressions = {level = "log.level || \"log.level\" || level"}
   }
   stage.labels {
     values = {level = ""}
