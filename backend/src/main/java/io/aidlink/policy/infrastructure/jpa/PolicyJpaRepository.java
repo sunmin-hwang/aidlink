@@ -42,12 +42,7 @@ public interface PolicyJpaRepository extends JpaRepository<PolicyEntity, Long> {
             FROM policy p
             WHERE p.lifecycle_status = 'ACTIVE'
               AND (:query IS NULL OR
-                to_tsvector(
-                    'simple',
-                    coalesce(p.name, '') || ' ' || coalesce(p.description, '') || ' '
-                        || coalesce(p.target_description, '') || ' ' || coalesce(p.support_content, '') || ' '
-                        || coalesce(p.provider, '')
-                ) @@ websearch_to_tsquery('simple', :query)
+                p.search_document @@ websearch_to_tsquery('simple', :query)
                 OR p.name % :query)
               AND (:category IS NULL OR p.category = :category)
               AND (:regionCode IS NULL OR p.region_code IN (:regionCode, 'NATIONWIDE'))
@@ -58,12 +53,7 @@ public interface PolicyJpaRepository extends JpaRepository<PolicyEntity, Long> {
             ORDER BY
               CASE WHEN :sort = 'RELEVANCE' AND :query IS NOT NULL THEN
                 ts_rank(
-                    to_tsvector(
-                        'simple',
-                        coalesce(p.name, '') || ' ' || coalesce(p.description, '') || ' '
-                            || coalesce(p.target_description, '') || ' ' || coalesce(p.support_content, '') || ' '
-                            || coalesce(p.provider, '')
-                    ),
+                    p.search_document,
                     websearch_to_tsquery('simple', :query)
                 )
               END DESC,
@@ -83,12 +73,7 @@ public interface PolicyJpaRepository extends JpaRepository<PolicyEntity, Long> {
             FROM policy p
             WHERE p.lifecycle_status = 'ACTIVE'
               AND (:query IS NULL OR
-                to_tsvector(
-                    'simple',
-                    coalesce(p.name, '') || ' ' || coalesce(p.description, '') || ' '
-                        || coalesce(p.target_description, '') || ' ' || coalesce(p.support_content, '') || ' '
-                        || coalesce(p.provider, '')
-                ) @@ websearch_to_tsquery('simple', :query)
+                p.search_document @@ websearch_to_tsquery('simple', :query)
                 OR p.name % :query)
               AND (:category IS NULL OR p.category = :category)
               AND (:regionCode IS NULL OR p.region_code IN (:regionCode, 'NATIONWIDE'))
@@ -116,12 +101,7 @@ public interface PolicyJpaRepository extends JpaRepository<PolicyEntity, Long> {
             JOIN policy_rule rule ON rule.policy_id = p.id
             WHERE p.lifecycle_status = 'ACTIVE'
               AND (:query IS NULL OR
-                to_tsvector(
-                    'simple',
-                    coalesce(p.name, '') || ' ' || coalesce(p.description, '') || ' '
-                        || coalesce(p.target_description, '') || ' ' || coalesce(p.support_content, '') || ' '
-                        || coalesce(p.provider, '')
-                ) @@ websearch_to_tsquery('simple', :query)
+                p.search_document @@ websearch_to_tsquery('simple', :query)
                 OR p.name % :query)
               AND (:category IS NULL OR p.category = :category)
               AND (:regionCode IS NULL OR p.region_code IN (:regionCode, 'NATIONWIDE'))
