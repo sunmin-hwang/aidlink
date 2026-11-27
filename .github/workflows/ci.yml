@@ -11,6 +11,11 @@ jobs:
   backend:
     runs-on: ubuntu-latest
     services:
+      mailpit:
+        image: axllent/mailpit:v1.27.4
+        ports:
+          - 11025:1025
+          - 18025:8025
       postgres:
         image: postgres:17.11-alpine
         env:
@@ -28,6 +33,9 @@ jobs:
       AIDLINK_RUN_POSTGRES_TEST: "true"
       AIDLINK_LINK_DB_TEST: "true"
       AIDLINK_PERIOD_DB_TEST: "true"
+      AIDLINK_SEARCH_DB_TEST: "true"
+      AIDLINK_BRIEFING_DB_TEST: "true"
+      AIDLINK_BRIEFING_MAIL_TEST: "true"
       AIDLINK_DB_URL: jdbc:postgresql://localhost:5432/aidlink
       AIDLINK_DB_USERNAME: aidlink
       AIDLINK_DB_PASSWORD: aidlink_ci
