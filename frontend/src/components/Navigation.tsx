@@ -40,7 +40,7 @@ export function Navigation() {
           <Link aria-current={isActive("/bookmarks") ? "page" : undefined} className={isActive("/bookmarks") ? "active" : undefined} href="/bookmarks">저장 정책</Link>
           <Link aria-current={isActive("/analysis") ? "page" : undefined} className={isActive("/analysis") ? "active" : undefined} href="/analysis">맞춤 분석</Link>
           <Link aria-current={isActive("/simulation") ? "page" : undefined} className={isActive("/simulation") ? "active" : undefined} href="/simulation">상황 변화</Link>
-          <span className="nav-planned">정책 브리핑 <small>준비 중</small></span>
+          <Link aria-current={isActive("/briefings") ? "page" : undefined} className={isActive("/briefings") ? "active" : undefined} href="/briefings">정책 브리핑</Link>
         </div>
         <div className="nav-actions">
           <div className="desktop-auth-controls">
@@ -56,7 +56,7 @@ export function Navigation() {
               <Link aria-current={isActive("/bookmarks") ? "page" : undefined} className={isActive("/bookmarks") ? "active" : undefined} href="/bookmarks">저장 정책</Link>
               <Link aria-current={isActive("/analysis") ? "page" : undefined} className={isActive("/analysis") ? "active" : undefined} href="/analysis">맞춤 분석</Link>
               <Link aria-current={isActive("/simulation") ? "page" : undefined} className={isActive("/simulation") ? "active" : undefined} href="/simulation">상황 변화</Link>
-              <span className="mobile-nav-planned">정책 브리핑 <small>준비 중</small></span>
+              <Link aria-current={isActive("/briefings") ? "page" : undefined} className={isActive("/briefings") ? "active" : undefined} href="/briefings">정책 브리핑</Link>
               <div className="mobile-auth-controls">
                 <AuthControls />
               </div>

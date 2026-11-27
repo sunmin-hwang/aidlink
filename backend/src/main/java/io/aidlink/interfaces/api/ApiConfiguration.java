@@ -33,6 +33,6 @@ public class ApiConfiguration implements WebMvcConfigurer {
     @Override
     public void addInterceptors(org.springframework.web.servlet.config.annotation.InterceptorRegistry registry) {
         registry.addInterceptor(rateLimitInterceptor)
-                .addPathPatterns("/api/v1/eligibility/**", "/api/v1/simulations/**");
+                .addPathPatterns("/api/v1/eligibility/**", "/api/v1/simulations/**", "/api/v1/me/briefings");
     }
 }

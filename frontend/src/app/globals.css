@@ -2820,3 +2820,25 @@ select:focus {
     transition: none;
   }
 }
+/* Personal briefings */
+.briefing-controls { padding: 1.5rem; border: 1px solid var(--line, #ddd); border-radius: 16px; margin-bottom: 2rem; }
+.briefing-controls button, .briefing-history button { font: inherit; cursor: pointer; padding: .7rem 1rem; border: 1px solid #b8c4b8; border-radius: 8px; background: #f1f6f0; color: #193c28; }
+.briefing-controls button:disabled, .briefing-history button:disabled { opacity: .55; cursor: wait; }
+.briefing-layout { display: grid; grid-template-columns: minmax(180px, 260px) minmax(0, 1fr); gap: 2rem; }
+.briefing-history ul { list-style: none; padding: 0; display: grid; gap: .6rem; }
+.briefing-history button { text-align: left; width: 100%; }
+.briefing-history button[aria-pressed="true"] { border-color: #193c28; font-weight: 700; }
+.briefing-report, .briefing-item { min-width: 0; overflow-wrap: anywhere; }
+.briefing-item { border-top: 1px solid #ddd; padding: 1.5rem 0; }
+.briefing-item h3 { margin: .7rem 0; }
+.briefing-item p, .briefing-item li { line-height: 1.7; }
+.briefing-links { display: flex; flex-wrap: wrap; gap: 1rem; }
+.briefing-email { margin-top: 2rem; padding: 1.5rem; border: 1px solid var(--line); border-radius: 16px; overflow-wrap: anywhere; }
+.briefing-email-verification, .briefing-email-schedule { display: grid; gap: 1rem; margin: 1.2rem 0; }
+.briefing-email label { display: block; line-height: 1.8; }
+.briefing-email input:not([type="checkbox"]) { display: block; width: min(100%, 32rem); box-sizing: border-box; padding: .6rem; }
+.briefing-email input[type="checkbox"] { width: auto; }
+.briefing-email button { width: fit-content; padding: .6rem 1rem; font: inherit; cursor: pointer; }
+.briefing-email button:disabled { opacity: .5; cursor: default; }
+.briefing-deliveries { padding-left: 1.2rem; display: grid; gap: 1rem; }
+@media (max-width: 760px) { .briefing-layout { grid-template-columns: 1fr; } }

@@ -12,6 +12,13 @@ import java.util.Map;
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    ResponseEntity<Map<String, String>> statusError(org.springframework.web.server.ResponseStatusException exception) {
+        return ResponseEntity.status(exception.getStatusCode())
+                .cacheControl(org.springframework.http.CacheControl.noStore())
+                .body(Map.of("message", exception.getReason() == null ? "요청을 처리하지 못했습니다." : exception.getReason()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<Map<String, String>> validationError(MethodArgumentNotValidException exception) {
         return ResponseEntity.badRequest().body(Map.of("message", "요청 값이 올바르지 않습니다."));

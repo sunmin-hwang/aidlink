@@ -59,6 +59,12 @@ public class EligibilityService {
         return analysis;
     }
 
+    /** Conditions on the selected AND/OR evaluation path, for explanations without unused branches. */
+    public List<ConditionEvaluation> relevantConditions(Policy policy, UserProfile profile, LocalDate evaluationDate) {
+        return policy.rule() == null ? List.of()
+                : ruleEngine.evaluate(policy.rule(), profile, evaluationDate).relevantConditions();
+    }
+
     private EligibilityAnalysis createAnalysis(
             Policy policy,
             EligibilityStatus eligibilityStatus,

@@ -71,6 +71,7 @@ export const config = {
     "/bookmarks/:path*",
     "/profile/:path*",
     "/analysis/:path*",
+    "/briefings/:path*",
     "/simulation/:path*",
     "/admin/:path*",
   ],

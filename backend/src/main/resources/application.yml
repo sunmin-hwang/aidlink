@@ -1,4 +1,16 @@
 spring:
+  mail:
+    host: ${AIDLINK_SMTP_HOST:localhost}
+    port: ${AIDLINK_SMTP_PORT:587}
+    username: ${AIDLINK_SMTP_USERNAME:}
+    password: ${AIDLINK_SMTP_PASSWORD:}
+    properties:
+      "[mail.smtp.auth]": ${AIDLINK_SMTP_AUTH:true}
+      "[mail.smtp.starttls.enable]": ${AIDLINK_SMTP_STARTTLS:true}
+      "[mail.smtp.starttls.required]": ${AIDLINK_SMTP_STARTTLS:true}
+      "[mail.smtp.connectiontimeout]": 5000
+      "[mail.smtp.timeout]": 5000
+      "[mail.smtp.writetimeout]": 5000
   application:
     name: aidlink
   autoconfigure:
@@ -19,6 +31,9 @@ server:
         same-site: lax
 
 management:
+  health:
+    mail:
+      enabled: ${AIDLINK_BRIEFING_MAIL_ENABLED:false}
   metrics:
     distribution:
       percentiles-histogram:
@@ -57,6 +72,13 @@ logging:
         environment: ${AIDLINK_ENVIRONMENT:local}
 
 aidlink:
+  briefing:
+    mail:
+      enabled: ${AIDLINK_BRIEFING_MAIL_ENABLED:false}
+      scheduling-enabled: ${AIDLINK_BRIEFING_MAIL_SCHEDULING_ENABLED:false}
+      from: ${AIDLINK_BRIEFING_MAIL_FROM:}
+      allowed-recipients: ${AIDLINK_BRIEFING_MAIL_ALLOWED_RECIPIENTS:}
+      poll-ms: ${AIDLINK_BRIEFING_MAIL_POLL_MS:10000}
   links:
     scheduling-enabled: ${AIDLINK_LINK_CHECK_SCHEDULING_ENABLED:false}
     cron: ${AIDLINK_LINK_CHECK_CRON:0 */30 * * * *}
